@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST Rate Calculator v3 — Confidential</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+/* Header */
+.header{background:linear-gradient(135deg,#0b0b0a,#162840);padding:20px 32px;border-bottom:3px solid #3e6993;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header h1{color:#6795af;font-size:1.3rem;letter-spacing:3px;text-transform:uppercase}
+.header p{color:#454444;font-size:.7rem;margin-top:3px;letter-spacing:1px}
+.conf{font-size:.67rem;color:#3e6993;letter-spacing:2px;text-transform:uppercase;border:1px solid #3e6993;padding:4px 10px;border-radius:4px}
+/* Layout */
+.container{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+/* Cards */
+.card{background:#161b22;border:1px solid #2a3444;border-radius:12px;padding:22px;margin-bottom:20px}
+.card-title{font-size:.7rem;letter-spacing:2.5px;text-transform:uppercase;color:#3e6993;margin-bottom:18px;border-bottom:1px solid #1e2633;padding-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+/* Fields */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.77rem;color:#959494;margin-bottom:5px;letter-spacing:.5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;background:#0d1117;border:1px solid #2a3444;border-radius:8px;color:#e0e0e0;font-size:.92rem;transition:border-color .2s}
+.field input:focus,.field select:focus{outline:none;border-color:#3e6993}
+.field input.autofill{border-color:#3e6993;background:#0a1520}
+/* Route card */
+.route-card{border-color:#3e6993}
+/* Origin search */
+.orig-chip{background:#0a1520;border:1px solid #3e6993;border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px;cursor:default}
+.orig-chip .oc-name{flex:1;font-size:.9rem;color:#e0e0e0;font-weight:600}
+.orig-chip .oc-addr{font-size:.7rem;color:#959494}
+.orig-chip .oc-btn{background:#0d1117;border:1px solid #2a3444;border-radius:5px;color:#6795af;cursor:pointer;font-size:.72rem;padding:4px 10px;white-space:nowrap;transition:border-color .2s}
+.orig-chip .oc-btn:hover{border-color:#6795af}
+#originSearchWrap{position:relative;display:none}
+#originDrop{position:absolute;top:100%;left:0;right:0;background:#161b22;border:1px solid #3e6993;border-top:none;border-radius:0 0 8px 8px;max-height:260px;overflow-y:auto;z-index:300;display:none}
+/* Locations bar */
+.loc-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.loc-bar label{font-size:.77rem;color:#959494;white-space:nowrap}
+.loc-bar select{flex:1;min-width:200px;padding:9px 12px;background:#0d1117;border:1px solid #2a3444;border-radius:8px;color:#e0e0e0;font-size:.88rem}
+.loc-bar select:focus{outline:none;border-color:#3e6993}
+/* Manage locations */
+.loc-mgr{background:#0d1117;border:1px solid #2a3444;border-radius:8px;padding:16px;margin-bottom:16px;display:none}
+.loc-mgr.open{display:block}
+.loc-mgr h4{font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:#3e6993;margin-bottom:12px}
+.saved-loc-list{margin-bottom:12px}
+.saved-loc-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#161b22;border-radius:6px;margin-bottom:6px;font-size:.83rem}
+.saved-loc-item .sli-name{font-weight:600;color:#e0e0e0}
+.saved-loc-item .sli-addr{font-size:.72rem;color:#959494;margin-top:2px}
+.saved-loc-item .sli-del{background:none;border:none;color:#454444;cursor:pointer;font-size:.8rem;padding:2px 6px}
+.saved-loc-item .sli-del:hover{color:#ef5350}
+.add-loc-form{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;align-items:end}
+@media(max-width:600px){.add-loc-form{grid-template-columns:1fr}}
+/* Route stops */
+.stops-list{margin:14px 0}
+.stop-card{background:#0d1117;border:1px solid #2a3444;border-radius:8px;padding:14px;margin-bottom:10px;position:relative}
+.stop-card .stop-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stop-card .stop-num{font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:#3e6993;font-weight:700}
+.stop-card .stop-del{background:none;border:none;color:#454444;cursor:pointer;font-size:.85rem;padding:3px 7px;border-radius:4px;transition:color .2s}
+.stop-card .stop-del:hover{color:#ef5350}
+.stop-type-tabs{display:flex;gap:6px;margin-bottom:10px}
+.stt{padding:5px 12px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid #2a3444;background:#161b22;color:#959494;transition:all .2s}
+.stt.active{background:#0e1e30;border-color:#3e6993;color:#6795af}
+/* Search within stop */
+.stop-search-wrap{position:relative}
+.stop-search-input{width:100%;padding:9px 35px 9px 12px;background:#161b22;border:1px solid #2a3444;border-radius:7px;color:#e0e0e0;font-size:.88rem}
+.stop-search-input:focus{outline:none;border-color:#3e6993}
+.stop-dd{position:absolute;top:100%;left:0;right:0;background:#161b22;border:1px solid #3e6993;border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:200;display:none}
+.sd-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid #1e2633;transition:background .15s}
+.sd-item:hover{background:#0e1e30}
+.sd-item .sdi-name{font-size:.85rem;color:#e0e0e0}
+.sd-item .sdi-sub{font-size:.7rem;color:#959494;margin-top:1px}
+.sd-item .sdi-mi{float:right;font-size:.75rem;font-weight:700;color:#6795af;background:#0d1117;padding:1px 7px;border-radius:10px}
+/* Selected stop info */
+.stop-selected{background:#0a1520;border:1px solid #3e6993;border-radius:7px;padding:10px 12px;margin-top:8px;display:none}
+.stop-selected .ss-name{font-size:.9rem;color:#e0e0e0;font-weight:600}
+.stop-selected .ss-addr{font-size:.73rem;color:#959494;margin-top:2px}
+.stop-selected .ss-clear{float:right;background:none;border:none;color:#454444;cursor:pointer;font-size:.75rem}
+.stop-selected .ss-clear:hover{color:#ef5350}
+/* Run-type badges */
+.rbadge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:.68rem;font-weight:700;margin-left:5px}
+.rb-local{background:#0d2e1a;color:#4caf82}
+.rb-mid{background:#2a1e0a;color:#ffb74d}
+.rb-down{background:#0e1e30;color:#6795af}
+.rb-pickup{background:#2a1a00;color:#ff9800}
+/* Route results */
+.route-results{background:#0a1520;border:2px solid #3e6993;border-radius:10px;padding:16px;margin-top:16px;display:none}
+.route-results.visible{display:block}
+.rr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:500px){.rr-grid{grid-template-columns:1fr}}
+.rr-box{background:#0d1117;border-radius:8px;padding:12px;text-align:center}
+.rr-lbl{font-size:.67rem;color:#959494;letter-spacing:1px;text-transform:uppercase}
+.rr-val{font-size:1.4rem;font-weight:800;color:#6795af;margin-top:4px}
+.rr-note{font-size:.75rem;color:#4caf82;margin-top:4px}
+.rr-legs{margin-top:12px;border-top:1px solid #1e2633;padding-top:12px}
+.rr-legs h4{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:#454444;margin-bottom:8px}
+.leg-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a2230;font-size:.8rem}
+.leg-item:last-child{border-bottom:none}
+.leg-arrow{color:#3e6993}
+.leg-from{color:#959494;flex:1}
+.leg-to{color:#e0e0e0;flex:2}
+.leg-mi{color:#6795af;font-weight:700;white-space:nowrap}
+/* Calc spinner */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #3e6993;border-top-color:#6795af;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Buttons */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;letter-spacing:.4px;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:#3e6993;color:#fff}
+.btn-primary:hover:not(:disabled){background:#4d7fa8}
+.btn-outline{background:transparent;color:#6795af;border:1px solid #3e6993}
+.btn-outline:hover:not(:disabled){background:#0e1e30}
+.btn-maps{background:#1a3a2a;color:#4caf82;border:1px solid #4caf82}
+.btn-maps:hover{background:#1e4a34}
+.btn-danger{background:transparent;color:#ef5350;border:1px solid #ef5350}
+.btn-danger:hover{background:#1a0808}
+.btn-sm{padding:6px 12px;font-size:.75rem}
+.btn-mgr{background:transparent;color:#6795af;border:1px solid #2a3444;font-size:.75rem;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
+.btn-mgr:hover{border-color:#3e6993}
+/* Divider */
+.section-div{border:none;border-top:1px solid #1e2633;margin:20px 0}
+/* Billing grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+/* Toggle */
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#2a3444;border-radius:24px;transition:.3s}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#959494;border-radius:50%;transition:.3s}
+input:checked+.slider{background:#3e6993}
+input:checked+.slider:before{transform:translateX(18px);background:#fff}
+.toggle-label{font-size:.8rem;color:#959494}
+/* Bill out */
+.bill-total{background:linear-gradient(135deg,#0e1e2e,#162840);border:2px solid #3e6993;border-radius:10px;padding:18px;text-align:center;margin-bottom:16px}
+.bill-total .lbl{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:#6795af}
+.bill-total .amt{font-size:2.4rem;font-weight:800;color:#fff;margin:5px 0 2px}
+.bill-total .note{font-size:.7rem;color:#454444}
+/* Line items */
+.line-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2633}
+.line-item:last-child{border-bottom:none}
+.line-item .lbl{font-size:.81rem;color:#959494}
+.line-item .val{font-size:.91rem;color:#e0e0e0;font-weight:500}
+/* Owner */
+.owner-btn{display:flex;align-items:center;gap:8px;background:#0d1117;border:1px solid #2a3444;border-radius:8px;padding:9px 14px;cursor:pointer;margin:14px 0 0;user-select:none;transition:border-color .2s}
+.owner-btn:hover{border-color:#3e6993}
+.owner-section{display:none;margin-top:14px;border-top:1px dashed #2a3444;padding-top:14px}
+.owner-section.visible{display:block}
+.int-label{font-size:.66rem;letter-spacing:2px;color:#454444;text-transform:uppercase;margin-bottom:10px}
+.cost-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1a2230;font-size:.81rem}
+.cost-line:last-child{border-bottom:none}
+.cost-lbl{color:#959494}.cost-val{font-weight:600}
+.red{color:#ef5350}.green{color:#4caf82}.blue{color:#6795af}.amber{color:#ffb74d}
+.profit-header{display:flex;justify-content:space-between;margin:12px 0 5px}
+.ph-label{font-size:.77rem;color:#959494}
+.ph-value{font-size:.88rem;font-weight:700}
+.bar-track{background:#0d1117;border-radius:6px;height:8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width .5s ease,background .3s}
+.bar-ticks{display:flex;justify-content:space-between;margin-top:4px;font-size:.66rem;color:#454444}
+/* Monthly */
+.monthly-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+@media(max-width:500px){.monthly-grid{grid-template-columns:1fr}}
+.stat-box{background:#0d1117;border:1px solid #2a3444;border-radius:8px;padding:12px;text-align:center}
+.s-lbl{font-size:.66rem;color:#959494;letter-spacing:1px;text-transform:uppercase}
+.s-rev{font-size:.73rem;color:#454444;margin:3px 0 2px}
+.s-val{font-size:1.25rem;font-weight:800;margin-top:2px}
+.monthly-note{font-size:.72rem;color:#454444;margin-top:10px;line-height:1.5}
+.aug-header{margin-top:16px;padding-top:14px;border-top:1px solid #1e2633}
+.aug-lbl{font-size:.67rem;letter-spacing:2px;color:#ffb74d;text-transform:uppercase;margin-bottom:10px}
+/* Footer */
+.footer{text-align:center;margin-top:28px;font-size:.63rem;color:#2a3444;letter-spacing:2.5px;text-transform:uppercase}
+/* Error/status */
+.status-msg{font-size:.8rem;padding:8px 12px;border-radius:6px;margin-top:10px;display:none}
+.status-err{background:#1a0808;border:1px solid #ef5350;color:#ef5350}
+.status-ok{background:#0a1a0a;border:1px solid #4caf82;color:#4caf82}
+.status-info{background:#0a1520;border:1px solid #3e6993;color:#6795af}
+/* client type toggle */
+.client-toggle-bar{display:flex;gap:0;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid #2a3444}
+.ct-btn{flex:1;padding:10px 14px;background:#0d1117;border:none;color:#959494;font-size:.78rem;font-weight:600;cursor:pointer;letter-spacing:.5px;transition:all .2s;text-align:center}
+.ct-btn.active-cur{background:#0a1e10;color:#4caf82;border-bottom:2px solid #4caf82}
+.ct-btn.active-new{background:#0e1e30;color:#6795af;border-bottom:2px solid #6795af}
+.client-badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.67rem;font-weight:700;letter-spacing:1px;margin-left:8px;vertical-align:middle}
+.cb-cur{background:#0a1e10;color:#4caf82}
+.cb-new{background:#0e1e30;color:#6795af}
+/* surcharge */
+.surcharge-note{font-size:.73rem;color:#ffb74d;margin-top:4px}
+.miles-note{font-size:.71rem;color:#3e6993;margin-top:4px}
+/* Print */
+@media print{
+  body{background:#fff;color:#000}
+  .header{background:#0b0b0a!important;-webkit-print-color-adjust:exact}
+  .owner-btn,.owner-section,.btn-row,.route-card .btn-row,.monthly-card,.footer,.conf,.btn-mgr{display:none!important}
+  .card{border:1px solid #ccc;background:#fff}
+  .bill-total{background:#f0f5fa!important;border:2px solid #3e6993;-webkit-print-color-adjust:exact}
+  .bill-total .amt{color:#0b0b0a}
+  .line-item .lbl{color:#333}.line-item .val{color:#000}
+  .route-results{background:#f5f5f5!important;border:1px solid #ccc;display:block!important}
+  .rr-val{color:#0b0b0a}.rr-lbl{color:#333}
+  .leg-from,.leg-to{color:#000}.leg-mi{color:#0b0b0a}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Global Security Transportation</h1>
+    <p>Proprietary Billing Rate Calculator &nbsp;|&nbsp; Internal Use Only</p>
+  </div>
+  <div class="conf">Confidential</div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════
+     ROUTE BUILDER
+══════════════════════════════════════════ -->
+<div class="card route-card">
+  <div class="card-title">
+    <span>&#128205; Route Builder</span>
+    <span style="font-size:.68rem;color:#959494;font-weight:400"><span style="color:#6795af">&#9632;</span> Dispensary &nbsp;<span style="color:#ff9800">&#9632;</span> Pickup/Supply &nbsp;<span style="color:#959494">&#9632;</span> Custom</span>
+    <button class="btn-mgr" onclick="toggleLocMgr()">&#9965; Manage Locations</button>
+  </div>
+
+  <!-- Location Manager -->
+  <div class="loc-mgr" id="locMgr">
+    <h4>Saved Starting Locations</h4>
+    <div class="saved-loc-list" id="savedLocList"></div>
+    <div class="add-loc-form">
+      <div class="field" style="margin:0">
+        <label>Location Name</label>
+        <input type="text" id="newLocName" placeholder="e.g. GST Jacksonville">
+      </div>
+      <div class="field" style="margin:0">
+        <label>Full Address</label>
+        <input type="text" id="newLocAddr" placeholder="Street, City, State ZIP">
+      </div>
+      <div style="padding-bottom:0">
+        <button class="btn btn-primary btn-sm" onclick="saveNewLoc()" style="margin-top:20px">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Origin Selector -->
+  <div style="margin-bottom:16px">
+    <label style="font-size:.77rem;color:#959494;display:block;margin-bottom:7px">&#128205; Starting Location:</label>
+    <div class="orig-chip" id="originChip">
+      <div style="flex:1">
+        <div class="oc-name" id="originChipName">GST — Oakbrook Terrace</div>
+        <div class="oc-addr" id="originChipAddr">17W703 Butterfield Rd, Oakbrook Terrace, IL 60181</div>
+      </div>
+      <button class="oc-btn" onclick="openOriginSearch()">&#9998; Change</button>
+    </div>
+    <div id="originSearchWrap">
+      <input type="text" id="originSearchInput" class="stop-search-input"
+        placeholder="Search dispensaries, pickups, or type a custom address..."
+        oninput="filterOriginDrop()"
+        onblur="setTimeout(hideOriginDrop,200)"
+        onfocus="filterOriginDrop()">
+      <div id="originDrop" class="stop-dd" style="max-height:260px"></div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:.69rem;color:#454444">Not in list?</span>
+        <button onclick="useTypedAddress()" style="font-size:.7rem;background:#0d1117;border:1px solid #2a3444;border-radius:5px;color:#959494;cursor:pointer;padding:3px 9px">Use typed address as start</button>
+        <button onclick="closeOriginSearch()" style="font-size:.7rem;background:none;border:none;color:#454444;cursor:pointer">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Route Stops -->
+  <div class="stops-list" id="stopsList"></div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn btn-outline btn-sm" onclick="addStop()">+ Add Stop</button>
+    <label class="toggle-row" style="margin:0">
+      <label class="toggle">
+        <input type="checkbox" id="returnToggle">
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">Return to origin (round trip)</span>
+    </label>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="btn-row">
+    <button class="btn btn-primary" id="calcRouteBtn" onclick="calcRoute()">
+      &#128207; Calculate Route
+    </button>
+    <button class="btn btn-maps" onclick="openMaps()">
+      &#127758; Open in Google Maps
+    </button>
+    <button class="btn btn-danger btn-sm" onclick="clearRoute()">Clear Route</button>
+  </div>
+
+  <div class="status-msg" id="routeStatus"></div>
+
+  <!-- Route Results -->
+  <div class="route-results" id="routeResults">
+    <div class="rr-grid">
+      <div class="rr-box">
+        <div class="rr-lbl">Total Miles</div>
+        <div class="rr-val" id="rrMiles">—</div>
+        <div class="rr-note" id="rrMilesNote"></div>
+      </div>
+      <div class="rr-box">
+        <div class="rr-lbl">Est. Drive Time</div>
+        <div class="rr-val" id="rrTime">—</div>
+      </div>
+      <div class="rr-box">
+        <div class="rr-lbl">Stops</div>
+        <div class="rr-val" id="rrStops">—</div>
+      </div>
+    </div>
+    <div class="rr-legs">
+      <h4>Route Breakdown</h4>
+      <div id="rrLegs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BILLING CALCULATOR
+══════════════════════════════════════════ -->
+
+<!-- Client Type Toggle -->
+<div class="client-toggle-bar">
+  <button id="ctBtnCur" class="ct-btn active-cur" onclick="setClientType('current')">
+    &#128100; CURRENT CLIENT &nbsp;<span style="font-size:.65rem;color:#4caf82">$0.35/mi surcharge</span>
+  </button>
+  <button id="ctBtnNew" class="ct-btn" onclick="setClientType('new')">
+    &#127381; NEW CLIENT &nbsp;<span style="font-size:.65rem;color:#6795af">$0.85/mi surcharge</span>
+  </button>
+</div>
+
+<div class="grid">
+  <!-- INPUT -->
+  <div class="card" id="billingCard">
+    <div class="card-title"><span>Run Details</span><span id="clientBadge" class="client-badge cb-cur">CURRENT CLIENT</span></div>
+    <div class="field">
+      <label>Driver 1 — Hours Worked</label>
+      <input type="number" id="hours1" placeholder="e.g. 10.5" step="0.25" min="0" oninput="calculate()">
+    </div>
+    <div class="toggle-row">
+      <label class="toggle"><input type="checkbox" id="toggle2" onchange="toggleD2()"><span class="slider"></span></label>
+      <span class="toggle-label">Add Second Driver</span>
+    </div>
+    <div class="field" id="d2field" style="display:none">
+      <label>Driver 2 — Hours Worked</label>
+      <input type="number" id="hours2" placeholder="e.g. 10.5" step="0.25" min="0" oninput="calculate()">
+    </div>
+    <div class="field">
+      <label>Driver Hourly Rate</label>
+      <select id="driverRate" onchange="calculate()">
+        <option value="22">$22.00 / hr</option>
+        <option value="23">$23.00 / hr</option>
+        <option value="24" selected>$24.00 / hr (avg)</option>
+        <option value="25">$25.00 / hr</option>
+        <option value="26">$26.00 / hr</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Total Miles Driven <span id="runBadge"></span></label>
+      <input type="number" id="miles" placeholder="e.g. 140" min="0" oninput="onMilesEdit()">
+      <div class="miles-note" id="milesNote" style="display:none">&#9654; Auto-filled from route — edit to override</div>
+      <div class="surcharge-note" id="surchargeNote" style="display:none">&#9889; Long-haul surcharge on miles over 200</div>
+    </div>
+    <div class="field">
+      <label>Actual Gas Price (per gallon)</label>
+      <select id="gasPrice" onchange="calculate()">
+        <option value="5.00">$5.00 / gal</option>
+        <option value="5.25">$5.25 / gal</option>
+        <option value="5.50" selected>$5.50 / gal (avg)</option>
+        <option value="5.75">$5.75 / gal</option>
+        <option value="6.00">$6.00 / gal</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="printQuote()">&#128424; Print Quote</button>
+      <button class="btn btn-outline" onclick="clearBilling()">Clear</button>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="card">
+    <div class="card-title">Bill Out Rate</div>
+    <div class="bill-total">
+      <div class="lbl">Total Amount to Bill Client</div>
+      <div class="amt" id="totalOut">—</div>
+      <div class="note" id="runTypeNote">Enter run details to calculate</div>
+    </div>
+    <div class="line-item"><span class="lbl">Transportation &amp; Security Fee</span><span class="val" id="transportFee">—</span></div>
+    <div class="line-item"><span class="lbl">Fuel Charge</span><span class="val" id="fuelCharge">—</span></div>
+    <div class="line-item" id="surchargeRow" style="display:none"><span class="lbl">Long-Haul Mileage Surcharge <span id="surRateLabel" style="font-size:.68rem;color:#959494"></span></span><span class="val" id="surchargeAmt">—</span></div>
+    <div class="line-item"><span class="lbl">Compliance &amp; Insurance Fee</span><span class="val">$200.00</span></div>
+    <div class="owner-btn" onclick="toggleOwner()">
+      <span id="lockIcon">&#128274;</span>
+      <span style="font-size:.77rem;color:#959494" id="lockLabel">Show Internal Cost Breakdown</span>
+    </div>
+    <div class="owner-section" id="ownerSection">
+      <div class="int-label">&#9881; Internal Cost View — Do Not Share</div>
+      <div class="cost-line"><span class="cost-lbl">Driver Pay (actual)</span><span class="cost-val red" id="driverPayActual">—</span></div>
+      <div class="cost-line"><span class="cost-lbl">Gas Cost (actual)</span><span class="cost-val red" id="gasCostActual">—</span></div>
+      <div class="cost-line"><span class="cost-lbl">Insurance actual / run</span><span class="cost-val red">$109.09</span></div>
+      <div class="cost-line"><span class="cost-lbl">Overhead / run ($22k ÷ 27.5)</span><span class="cost-val red">$800.00</span></div>
+      <div class="cost-line" style="margin-top:6px;border-top:1px solid #2a3444;padding-top:8px">
+        <span class="cost-lbl">Gas markup profit</span><span class="cost-val green" id="gasMarkup">—</span>
+      </div>
+      <div class="cost-line"><span class="cost-lbl">Insurance surplus / run</span><span class="cost-val green">$90.91</span></div>
+      <div class="profit-header"><span class="ph-label">Run Profit</span><span class="ph-value" id="runProfit">—</span></div>
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%;background:#3e6993"></div></div>
+      <div class="bar-ticks"><span>0%</span><span id="marginTick">0%</span><span>40%+</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MONTHLY PROJECTION -->
+<div class="card monthly-card">
+  <div class="card-title">Monthly Profit Projection</div>
+  <div class="monthly-grid">
+    <div class="stat-box"><div class="s-lbl">25 Runs/Mo</div><div class="s-rev" id="rev25">—</div><div class="s-val" id="profit25" style="color:#959494">—</div></div>
+    <div class="stat-box"><div class="s-lbl">27.5 Runs/Mo</div><div class="s-rev" id="rev275">—</div><div class="s-val" id="profit275" style="color:#959494">—</div></div>
+    <div class="stat-box"><div class="s-lbl">30 Runs/Mo</div><div class="s-rev" id="rev30">—</div><div class="s-val" id="profit30" style="color:#959494">—</div></div>
+  </div>
+  <div class="aug-header">
+    <div class="aug-lbl">&#9733; After August — 2 Vans Paid Off</div>
+    <div class="monthly-grid">
+      <div class="stat-box" style="border-color:#2a3a1a"><div class="s-lbl">25 Runs</div><div class="s-rev" id="arev25">—</div><div class="s-val" id="aprofit25" style="color:#959494">—</div></div>
+      <div class="stat-box" style="border-color:#2a3a1a"><div class="s-lbl">27.5 Runs</div><div class="s-rev" id="arev275">—</div><div class="s-val" id="aprofit275" style="color:#959494">—</div></div>
+      <div class="stat-box" style="border-color:#2a3a1a"><div class="s-lbl">30 Runs</div><div class="s-rev" id="arev30">—</div><div class="s-val" id="aprofit30" style="color:#959494">—</div></div>
+    </div>
+  </div>
+  <div class="monthly-note" id="monthlyNote"></div>
+</div>
+
+<div class="footer">&#9888; Proprietary &amp; Confidential &nbsp;|&nbsp; Global Security Transportation &nbsp;|&nbsp; Internal Use Only</div>
+</div>
+
+<script>
+// ══ Dispensary data ══
+const DISP = [{"n":"Aces Dispensary - Plainfield","s":"12627 S Route 59","c":"Plainfield","z":"60585","co":"Will","r":"Chicago-Naperville-Elgin","m":30},{"n":"Altius Dispensary","s":"993 E Rollins Rd","c":"Round Lake Beach","z":"60073","co":"Lake","r":"Chicago-Naperville-Elgin","m":50},{"n":"Altius Dispensary - Carol Stream","s":"506 S Schmale Rd","c":"Carol Stream","z":"60188","co":"DuPage","r":"Chicago-Naperville-Elgin","m":10},{"n":"Altius Dispensary - Orland Hills","s":"9101 159th St","c":"Orland Hills","z":"60487","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Alton Dispensary","s":"1400 E Broadway","c":"Alton","z":"62002","co":"Madison","r":"St. Louis, MO","m":272},{"n":"Aroma Hill - Belvidere","s":"1874 Crystal Parkway","c":"Belvidere","z":"61008","co":"Boone","r":"Rockford","m":90},{"n":"Aroma Hill - Fox Lake","s":"1298 US Highway 12","c":"Fox Lake","z":"60020","co":"Lake","r":"Chicago-Naperville-Elgin","m":55},{"n":"Aroma Hill - Hoffman Estates","s":"1237 North Barrington Road","c":"Hoffman Estates","z":"60169","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Aroma Hill - Kankakee","s":"2255 E Court St","c":"Kankakee","z":"60901","co":"Kankakee","r":"Kankakee","m":60},{"n":"Aroma Hill - Peoria","s":"1210 W Glen Ave","c":"Peoria","z":"61614","co":"Peoria","r":"Peoria","m":150},{"n":"Ascend - Collinsville","s":"1014 Eastport Plaza Dr","c":"Collinsville","z":"62234","co":"Madison","r":"St. Louis, MO","m":275},{"n":"Ascend - Springfield","s":"628 E Adams St","c":"Springfield","z":"62701","co":"Sangamon","r":"Springfield","m":200},{"n":"Ascend - Springfield Horizon Dr.","s":"3201 Horizon Dr.","c":"Springfield","z":"62703","co":"Sangamon","r":"Springfield","m":200},{"n":"Ascend by Homecoming","s":"16200 Harlem Ave.","c":"Tinley Park","z":"60477","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Ascend Cannabis Outlet by InLabs","s":"39 W North Ave.","c":"Northlake","z":"60164","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Ascend Chicago Ridge","s":"9820 Ridgeland Ave","c":"Chicago Ridge","z":"60415","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Ascend  Fairview Heights","s":"114 Commerce Ln","c":"Fairview Heights","z":"62208","co":"St. Clair","r":"St. Louis, MO","m":280},{"n":"Ascend Moca  Logan Square","s":"2367 N Milwaukee Ave.","c":"Chicago","z":"60647","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Ascend Moca  River North","s":"216 W. Ohio St.","c":"Chicago","z":"60654","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Ash Ivy - Benton","s":"9 N Rend Lake Plz","c":"Benton","z":"62812","co":"Franklin","r":"South Illinois Nonmetropolitan","m":325},{"n":"AuraLight - Aurora","s":"1350 N Orchard Rd","c":"Aurora","z":"60506","co":"Kane","r":"Chicago-Naperville-Elgin","m":25},{"n":"Be Blue Island","s":"12720 Western Ave","c":"Blue Island","z":"60406","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Be. - Oak Forest","s":"5940 159th St","c":"Oak Forest","z":"60452","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Beyond Hello  Bloomington Keaton Place","s":"118 Keaton Place","c":"Bloomington","z":"61704","co":"McLean","r":"Bloomington","m":135},{"n":"Beyond Hello  Sauget Mississippi Ave","s":"1401 Mississippi Ave. Ste. 17","c":"Sauget","z":"62201","co":"St. Clair","r":"St. Louis, MO","m":280},{"n":"Beyond/Hello - Peoria","s":"7620 N IL Rt 91","c":"Peoria","z":"61615","co":"Peoria","r":"Peoria","m":150},{"n":"Beyond/Hello  Normal","s":"501 W Northtown Rd","c":"Normal","z":"61761","co":"McLean","r":"Bloomington","m":137},{"n":"Beyond/Hello  Sauget","s":"2021 Goose Lake Rd","c":"Sauget","z":"62206","co":"St. Clair","r":"St. Louis, MO","m":280},{"n":"Bisa Lina Carol Stream","s":"720 E North Ave","c":"Carol Stream","z":"60188","co":"DuPage","r":"Chicago-Naperville-Elgin","m":10},{"n":"Bisa Lina Joliet","s":"2121 W Jefferson St","c":"Joliet","z":"60435","co":"Will","r":"Chicago-Naperville-Elgin","m":28},{"n":"Bloc - Forest Park","s":"7216 Circle Ave","c":"Forest Park","z":"60130","co":"Cook","r":"Chicago-Naperville-Elgin","m":12},{"n":"Bloc Dispensary - Antioch","s":"417 E Il Route 173 Unit 106","c":"Antioch","z":"60002","co":"Lake","r":"Chicago-Naperville-Elgin","m":55},{"n":"Bloc Dispensary - Mattoon","s":"511 Lake Land Blvd","c":"Mattoon","z":"61938","co":"Coles","r":"East Central IL Nonmetropolitan","m":195},{"n":"Bloc Dispensary Berwyn","s":"7122 Ogden Ave","c":"Berwyn","z":"60402","co":"Cook","r":"Chicago-Naperville-Elgin","m":15},{"n":"BLOC Dispensary Kedzie","s":"3545 N Kedzie Ave","c":"Chicago","z":"60618","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Bloc Dispensary Metropolis","s":"2125 E 5th St","c":"Metropolis","z":"62960","co":"Massac","r":"South Illinois Nonmetropolitan","m":372},{"n":"Bloc Dispensary Northfield","s":"161 Waukegan Rd","c":"Northfield","z":"60093","co":"Cook","r":"Chicago-Naperville-Elgin","m":30},{"n":"Bloom Wellness - Normal","s":"1730 Bradford Ln Ste 185","c":"Normal","z":"61761","co":"McLean","r":"Bloomington","m":137},{"n":"Bloom Wellness - Quincy","s":"4440 Broadway St Ste 1","c":"Quincy","z":"62305","co":"Adams","r":"West Central Illinois Nonmetropolitan","m":250},{"n":"Bloom Wellness - Quincy 2","s":"1837 Broadway St","c":"Quincy","z":"62301","co":"Adams","r":"West Central Illinois Nonmetropolitan","m":250},{"n":"Bloom Wellness- Hometown","s":"4140 Southwest Hwy","c":"Hometown","z":"60456","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Blyss Dispensary","s":"610B S 42nd St","c":"Mount Vernon","z":"62864","co":"Jefferson","r":"South Illinois Nonmetropolitan","m":305},{"n":"Bridge City Collective East Dubuque","s":"122 Sinsinawa Ave","c":"East Dubuque","z":"61025","co":"Jo Daviess","r":"Northwest Illinois nonmetropolitan area","m":155},{"n":"Bud & Rita's - The Loop","s":"105 W Madison St","c":"Chicago","z":"60602","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Bud & Ritas - West Town","s":"1914 W Chicago Ave","c":"Chicago","z":"60622","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Bud and Ritas - Niles","s":"5960 W Touhy Ave","c":"Niles","z":"60714","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Bud and Ritas - Wadsworth","s":"41509 N US Highway 41","c":"Wadsworth","z":"60083","co":"Lake","r":"Chicago-Naperville-Elgin","m":58},{"n":"Bud and Ritas Chicago","s":"3425 W Belmont Ave","c":"Chicago","z":"60618","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Bud and Ritas Forsyth","s":"1401 Hickory Point Dr.","c":"Macon","z":"62535","co":"Macon","r":"Decatur","m":170},{"n":"Cannabist - Chicago","s":"4758 N Milwaukee Ave","c":"Chicago","z":"60630","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Cannabist - Villa Park","s":"133 Roosevelt Rd.","c":"Villa Park","z":"60181","co":"DuPage","r":"Chicago-Naperville-Elgin","m":5},{"n":"Cannect Dispensary","s":"3147 Mannheim Rd","c":"Franklin Park","z":"60131","co":"Cook","r":"Chicago-Naperville-Elgin","m":16},{"n":"Cloud 9 - East Peoria","s":"406 W Camp St.","c":"East Peoria","z":"61611","co":"Tazewell","r":"Peoria","m":152},{"n":"Cloud 9 - Oswego","s":"2420 US Highway 30","c":"Oswego","z":"60543","co":"Kendall","r":"Chicago-Naperville-Elgin","m":25},{"n":"Cloud 9 Cannabis - Schaumburg","s":"1823 W Wise Rd.","c":"Schaumburg","z":"60193","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Cloud9 - Champaign","s":"505 W Town Center Blvd.","c":"Champaign","z":"61822","co":"Champaign","r":"Champaign-Urbana","m":130},{"n":"Cloud9 - Edwardsville","s":"2341 Plum St","c":"Edwardsville","z":"62025","co":"Madison","r":"St. Louis, MO","m":268},{"n":"Cloudhaven - South Beloit","s":"1322 Gardner St.","c":"South Beloit","z":"61080","co":"Winnebago","r":"Rockford","m":95},{"n":"Consume - Oakbrook Terrace","s":"1S130 Summit Ave.","c":"Oakbrook Terrace","z":"60181","co":"DuPage","r":"Chicago-Naperville-Elgin","m":0},{"n":"Consume Antioch","s":"471 Main St","c":"Antioch","z":"60002","co":"Lake","r":"Chicago-Naperville-Elgin","m":55},{"n":"Consume Carbondale","s":"201 E. Main Street","c":"Carbondale","z":"62901","co":"Jackson","r":"Carbondale-Marion","m":320},{"n":"Consume Chicago","s":"6428 N Milwaukee Ave","c":"Chicago","z":"60631","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Consume Marion","s":"8195 Express Dr","c":"Marion","z":"62959","co":"Marion","r":"East Central IL Nonmetropolitan","m":310},{"n":"Consume St. Charles","s":"584 S Randall Rd.","c":"St Charles","z":"60174","co":"Kane","r":"Chicago-Naperville-Elgin","m":20},{"n":"Cookies - Bloomington","s":"1006 Jc Pkwy","c":"Bloomington","z":"61705","co":"McLean","r":"Bloomington","m":135},{"n":"Cookies - Chicago","s":"215 N Clinton St","c":"Chicago","z":"60661","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Cookies - Peoria Heights","s":"1209 E War Memorial Dr","c":"Peoria Heights","z":"61616","co":"Peoria","r":"Peoria","m":152},{"n":"Cookies - Pontoon Beach","s":"5111 State Route 111","c":"Pontoon Beach","z":"62040","co":"Madison","r":"St. Louis, MO","m":275},{"n":"Cookies Bolingbrook","s":"190 S Weber Rd","c":"Bolingbrook","z":"60490","co":"Will","r":"Chicago-Naperville-Elgin","m":18},{"n":"Curaleaf  Deerfield","s":"677 Lake Cook Rd","c":"Deerfield","z":"60015","co":"Lake","r":"Chicago-Naperville-Elgin","m":35},{"n":"Curaleaf  Justice","s":"8340 S Roberts Rd","c":"Justice","z":"60458","co":"Cook","r":"Chicago-Naperville-Elgin","m":14},{"n":"Curaleaf  Lincoln Park","s":"923 W. Weed St.","c":"Chicago","z":"60642","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Curaleaf  Melrose Park","s":"1413 West North Ave.","c":"Melrose Park","z":"60160","co":"Cook","r":"Chicago-Naperville-Elgin","m":14},{"n":"Curaleaf  Morris","s":"2400 W US Route 6","c":"Morris","z":"60450","co":"Grundy","r":"Chicago-Naperville-Elgin","m":50},{"n":"Curaleaf New Lenox","s":"705 E Lincoln Hwy.","c":"New Lenox","z":"60451","co":"Will","r":"Chicago-Naperville-Elgin","m":28},{"n":"Curaleaf  Northbrook","s":"755 Skokie Blvd.","c":"Northbrook","z":"60602","co":"Cook","r":"Chicago-Naperville-Elgin","m":30},{"n":"Curaleaf  Skokie","s":"10000 Skokie Blvd","c":"Skokie","z":"60077","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Curaleaf Westmont","s":"11 E. Ogden Ave.","c":"Westmont","z":"60559","co":"DuPage","r":"Chicago-Naperville-Elgin","m":5},{"n":"Curaleaf  Worth","s":"11425 S Harlem Ave","c":"Worth","z":"60482","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Dispensary 33","s":"5001 N Clark St","c":"Chicago","z":"60640","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Dispensary 33 - Fulton Market","s":"1152 W. Randolph","c":"Chicago","z":"60607","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Dr Greenthumbs Chicago","s":"2200 N Ashland Ave","c":"Chicago","z":"60614","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Dutchess - Lynwood","s":"20513 Torrence Ave","c":"Lynwood","z":"60411","co":"Cook","r":"Chicago-Naperville-Elgin","m":28},{"n":"Dutchess Cannabis - Batavia","s":"144 S Randall Rd","c":"Batavia","z":"60510","co":"Kane","r":"Chicago-Naperville-Elgin","m":22},{"n":"Dutchess Cannabis - Markham","s":"3063 W 159th St.","c":"Markham","z":"60428","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Dutchess Cannabis  Morton Grove","s":"6761 Dempster St","c":"Morton Grove","z":"60053","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Dutchess Cannabis N. Riverside","s":"8380 W Cermak Rd","c":"North Riverside","z":"60546","co":"Cook","r":"Chicago-Naperville-Elgin","m":10},{"n":"Dutchess Cannabis Oak Park","s":"1132 Lake St","c":"Oak Park","z":"60301","co":"Cook","r":"Chicago-Naperville-Elgin","m":14},{"n":"EarthMed","s":"852 S Westgate St","c":"Addison","z":"60101","co":"DuPage","r":"Chicago-Naperville-Elgin","m":8},{"n":"Earthmed - McHenry","s":"1711 N Richmond Rd.","c":"McHenry","z":"60051","co":"McHenry","r":"Chicago-Naperville-Elgin","m":50},{"n":"Earthmed Rosemont","s":"10441 E. Touhy Ave.","c":"Rosemont","z":"60018","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Emerald - Island Lake","s":"660 E State Rd.","c":"Island Lake","z":"60042","co":"Lake","r":"Chicago-Naperville-Elgin","m":48},{"n":"Excelleaf Dispensary","s":"305 E Locust St","c":"DeKalb","z":"60115","co":"Dekalb","r":"Chicago-Naperville-Elgin","m":40},{"n":"Goodies - Streamwood","s":"1594 Buttitta Dr","c":"Streamwood","z":"60107","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Grasshopper Club - South Loop","s":"58 E Roosevelt Rd Fl 1","c":"Chicago","z":"60605","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Grasshopper Club Logan Square","s":"2551 N. Milwaukee Ave.","c":"Chicago","z":"60647","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Green Releaf - Bourbonnais","s":"1660 N State Route 50","c":"Bourbonnais","z":"60914","co":"Kankakee","r":"Kankakee","m":58},{"n":"Green Releaf - Villa Park","s":"305 W North Ave","c":"Villa Park","z":"60181","co":"DuPage","r":"Chicago-Naperville-Elgin","m":5},{"n":"Green Rose - Chicago","s":"612 N. Wells St.","c":"Chicago","z":"60654","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Green Rose - Harwood Heights","s":"4660 N Harlem Ave","c":"Harwood Heights","z":"60706","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Green Rose - Lincolnwood","s":"4656 W Touhy Ave","c":"Lincolnwood","z":"60712","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Green Temple","s":"904 Edwardsville Rd.","c":"Troy","z":"62294","co":"Madison","r":"St. Louis, MO","m":262},{"n":"Greenlight Dispensary - Park City","s":"3331 Belvidere Rd Suites B C","c":"Park City","z":"60085","co":"Lake","r":"Chicago-Naperville-Elgin","m":52},{"n":"Guaranteed Dispensary","s":"620 N Fairbanks Ct","c":"Chicago","z":"60611","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Hatch Dispensary","s":"1433 W Fullerton Ave Ste C","c":"Addison","z":"60101","co":"DuPage","r":"Chicago-Naperville-Elgin","m":8},{"n":"Hatch Dispensary  Wheeling","s":"1500 E Lake Cook Rd","c":"Wheeling","z":"60090","co":"Lake","r":"Chicago-Naperville-Elgin","m":28},{"n":"Herb Social","s":"616 12th St.","c":"Lawrenceville","z":"62439","co":"Lawrence","r":"East Central IL Nonmetropolitan","m":260},{"n":"Hi Five Crestwood","s":"13352 Cicero Ave","c":"Crestwood","z":"60418","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Hi Rise Dispensary","s":"1795 N Barrington Rd","c":"Hoffman Estates","z":"60169","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"High Haven Darien","s":"8131 Cass Ave","c":"Darien","z":"60561","co":"DuPage","r":"Chicago-Naperville-Elgin","m":8},{"n":"High Haven Dispensary","s":"106 Mall Dr","c":"Normal","z":"61761","co":"McLean","r":"Bloomington","m":137},{"n":"High Haven Elgin","s":"15 Clock Tower Plz","c":"Elgin","z":"60120","co":"Kane","r":"Chicago-Naperville-Elgin","m":30},{"n":"High Profile - Martinsville","s":"3001 N York St.","c":"Martinsville","z":"62442","co":"Clark","r":"East Central IL Nonmetropolitan","m":240},{"n":"High Profile - Metropolis","s":"1801 E 5th St","c":"Metropolis","z":"62960","co":"Massac","r":"South Illinois Nonmetropolitan","m":372},{"n":"High Profile Cannabis Shop","s":"4211 Conestoga Dr","c":"Springfield","z":"62711","co":"Sangamon","r":"Springfield","m":200},{"n":"Ivy Hall - Bolingbrook","s":"361 S Bolingbrook Dr","c":"Bolingbrook","z":"60440","co":"Will","r":"Chicago-Naperville-Elgin","m":18},{"n":"Ivy Hall - Crystal Lake","s":"501 Pingree Rd.","c":"Crystal Lake","z":"60014","co":"McHenry","r":"Chicago-Naperville-Elgin","m":40},{"n":"Ivy Hall - Damen","s":"1720 N Damen Ave.","c":"Chicago","z":"60647","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Ivy Hall - Edwardsville","s":"6197 Old Alton Edwardsville Rd","c":"Edwardsville","z":"62025","co":"Madison","r":"St. Louis, MO","m":268},{"n":"Ivy Hall - Glendale Heights","s":"2130 Bloomingdale Rd Unit B","c":"Glendale Heights","z":"60139","co":"DuPage","r":"Chicago-Naperville-Elgin","m":8},{"n":"Ivy Hall - Logan Square","s":"3115 W Armitage Ave","c":"Chicago","z":"60647","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Ivy Hall - Montgomery","s":"1970 Caterpillar Dr","c":"Montgomery","z":"60538","co":"Kane","r":"Chicago-Naperville-Elgin","m":25},{"n":"Ivy Hall - Peoria","s":"3929 W. War Memorial Dr","c":"Peoria","z":"61615","co":"Peoria","r":"Peoria","m":150},{"n":"Ivy Hall - Streamwood","s":"630 S Sutton Rd","c":"Streamwood","z":"60107","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Ivy Hall Waukegan","s":"996 S Waukegan Rd.","c":"Waukegan","z":"60085","co":"Lake","r":"Chicago-Naperville-Elgin","m":50},{"n":"Jane & Bud's - Elgin","s":"205 S Randall Rd","c":"Elgin","z":"60123","co":"Kane","r":"Chicago-Naperville-Elgin","m":30},{"n":"Karma Club","s":"1590 N Clybourn Ave","c":"Chicago","z":"60642","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Key- Carbondale","s":"1010 E Main St.","c":"Carbondale","z":"62901","co":"Jackson","r":"Carbondale-Marion","m":320},{"n":"Kush21 - Jacksonville","s":"1112 Veterans Dr","c":"Jacksonville","z":"62650","co":"Morgan","r":"West Central Illinois Nonmetropolitan","m":220},{"n":"Lakeshore Cannabis Club","s":"1335 Lakeside Dr Unit 4","c":"Romeoville","z":"60446","co":"Will","r":"Chicago-Naperville-Elgin","m":22},{"n":"Lux Leaf Dispensary","s":"5539 Miller Circle Dr","c":"Matteson","z":"60443","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Lyfe Dispensary","s":"6774 Troy Dr","c":"Rockford","z":"61107","co":"Winnebago","r":"Rockford","m":90},{"n":"Maribis Of Chicago","s":"4570 S Archer Ave","c":"Chicago","z":"60632","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Maribis of Springfield","s":"2451 Denver Drive","c":"Springfield","z":"62702","co":"Sangamon","r":"Springfield","m":200},{"n":"Maribis of Springfield 2","s":"3025 Lindbergh Blvd","c":"Springfield","z":"62704","co":"Sangamon","r":"Springfield","m":200},{"n":"Maribis Westchester","s":"1137 South Mannheim Road","c":"Westchester","z":"60154","co":"Cook","r":"Chicago-Naperville-Elgin","m":10},{"n":"Market 96 - Belleville","s":"7300 Twin Pyramid Pkwy","c":"Belleville","z":"62223","co":"St. Clair","r":"St. Louis, MO","m":282},{"n":"Market 96 - Owego","s":"1144 Douglas Rd.","c":"Oswego","z":"60543","co":"Kendall","r":"Chicago-Naperville-Elgin","m":25},{"n":"Market 96 - S Wells Street","s":"529 S Wells St Ste 100","c":"Chicago","z":"60607","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Midway by Ascend","s":"5648 S Archer Ave","c":"Chicago","z":"60638","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Mint - Willowbrook","s":"900 75th St","c":"Willowbrook","z":"60527","co":"Cook","r":"Chicago-Naperville-Elgin","m":8},{"n":"Mint Cannabis - Forest Park","s":"7207 Roosevelt Rd","c":"Forest Park","z":"60130","co":"Cook","r":"Chicago-Naperville-Elgin","m":12},{"n":"Mint Cannabis - Villa Park","s":"310 E North Ave","c":"Villa Park","z":"60181","co":"DuPage","r":"Chicago-Naperville-Elgin","m":5},{"n":"Mission - Norridge","s":"4113 N Harlem Ave","c":"Norridge","z":"60706","co":"Cook","r":"Chicago-Naperville-Elgin","m":16},{"n":"Mission Calumet City","s":"1330 Torrence Ave.","c":"Calumet City","z":"60409","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Mission Illinois","s":"8554 S Commercial Ave","c":"Chicago","z":"60617","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Mood Shine Chicago Heights","s":"628 W Lincoln Hwy","c":"Chicago Heights","z":"60411","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Mystic Greenz - Belleville","s":"360 S Green Mount Rd","c":"Belleville","z":"62221","co":"St. Clair","r":"St. Louis, MO","m":282},{"n":"Mystic Greenz - Decatur","s":"5405 Indus. Dr.","c":"Decatur","z":"62522","co":"Macon","r":"Decatur","m":170},{"n":"Mystic Greenz - Lincoln","s":"1120 Woodlawn Rd","c":"Lincoln","z":"62656","co":"Logan","r":"West Central Illinois Nonmetropolitan","m":185},{"n":"Mystic Greenz - Olive Branch","s":"26650 IL State Route 3","c":"Olive Branch","z":"62969","co":"Alexander","r":"Cape Girardeau, MO","m":392},{"n":"Namaste Wellness","s":"6119 East Ave A","c":"Hodgkins","z":"60525","co":"Cook","r":"Chicago-Naperville-Elgin","m":12},{"n":"Natures Care Company","s":"975 Rohlwing Rd","c":"Rolling Meadows","z":"60008","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Natures Treatment of Illinois - Galesburg","s":"735 W. Main St.","c":"Galesburg","z":"61401","co":"Knox","r":"West Central Illinois Nonmetropolitan","m":170},{"n":"Natures Treatment of Illinois - Milan","s":"973 Tech Dr","c":"Milan","z":"61264","co":"Rock Island","r":"Davenport-Moline-Rock Island","m":178},{"n":"NCC Chi-West Loop","s":"810 W. Randolph St.","c":"Chicago","z":"60607","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Nirvana Dispensary Chicago","s":"2301 W Lawrence Ave","c":"Chicago","z":"60625","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Nirvana Dispensary Lake Zurich","s":"676 S Rand Rd","c":"Zake Zurich","z":"60047","co":"Lake","r":"Chicago-Naperville-Elgin","m":25},{"n":"Nirvana Dispensary Mt. Carmel","s":"825 Chestnut St","c":"Mount Carmel","z":"62863","co":"Wabash","r":"South Illinois Nonmetropolitan","m":290},{"n":"Nirvana Dispensary Palatine","s":"333 East Lake Cook Rd","c":"Palatine","z":"60074","co":"Cook","r":"Chicago-Naperville-Elgin","m":28},{"n":"NOBO","s":"27500 IL 120","c":"Lakemoor","z":"60051","co":"Lake","r":"Chicago-Naperville-Elgin","m":50},{"n":"Noxx - East Peoria","s":"300 S Main St","c":"East Peoria","z":"61611","co":"Tazewell","r":"Peoria","m":152},{"n":"NuEra - Dekalb","s":"818 W Lincoln Hwy Ste 7","c":"DeKalb","z":"60115","co":"DeKalb","r":"Chicago-Naperville-Elgin","m":40},{"n":"NuEra Aurora","s":"1415 Corporate Blvd.","c":"Aurora","z":"60502","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"NuEra Champaign","s":"102 E. Green St.","c":"Champaign","z":"61820","co":"Champaign","r":"Champaign-Urbana","m":130},{"n":"Nuera Chicago","s":"1308 W North Ave","c":"Chicago","z":"60642","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"nuEra Chicago Southland","s":"16950 Halsted St.","c":"Harvey","z":"60426","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Nuera East Dubuque","s":"20170 US Highway 20 W","c":"East Dubuque","z":"61025","co":"Jo Daviess","r":"Northwest Illinois nonmetropolitan area","m":155},{"n":"Nuera East Peoria","s":"504 Riverside Dr","c":"East Peoria","z":"61611","co":"Tazewell","r":"Peoria","m":152},{"n":"NuEra Pekin","s":"3249 Court St.","c":"Pekin","z":"61554","co":"Tazewell","r":"Peoria","m":158},{"n":"Nuera Urbana","s":"105 E University Ave","c":"Urbana","z":"61801","co":"Champaign","r":"Champaign-Urbana","m":133},{"n":"OKAY Cannabis - Wheeling","s":"781 N Milwaukee Ave","c":"Wheeling","z":"60090","co":"Cook","r":"Chicago-Naperville-Elgin","m":28},{"n":"OKAY Cannabis Dispensary - Evanston","s":"100 Chicago Ave","c":"Evanston","z":"60202","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Parkway Dispensary - Tilton","s":"2 Donna Dr.","c":"Tilton","z":"61833","co":"Vermilion","r":"Danville","m":130},{"n":"Parkway Forest Park","s":"7432 Madison St.","c":"Forest Park","z":"60130","co":"Cook","r":"Chicago-Naperville-Elgin","m":12},{"n":"Perception Cannabis","s":"7000 N Clark St","c":"Chicago","z":"60626","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Phili Dispensary","s":"1300 Locke Dr.","c":"Bourbonnais","z":"60914","co":"Kankakee","r":"Kankakee","m":58},{"n":"Planet 13 - Waukegan","s":"4000 Northpoint Blvd","c":"Waukegan","z":"60085","co":"Lake","r":"Chicago-Naperville-Elgin","m":50},{"n":"Prairie Cannabis - Naperville","s":"4S120 N Route 59","c":"Warrenville","z":"60563","co":"DuPage","r":"Chicago-Naperville-Elgin","m":8},{"n":"Prairie Cannabis South Loop","s":"622 W Roosevelt Rd","c":"Chicago","z":"60607","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Redemption Botanicals - Fox Lake","s":"107 Towne Centre Ln 31","c":"Fox lake","z":"60020","co":"Lake","r":"Chicago-Naperville-Elgin","m":55},{"n":"Revolution Dispensary - Mt. Prospect","s":"2015 E Euclid Ave","c":"Mt Prospect","z":"60056","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Revolution Dispensary - Normal","s":"1609 Northbrook Dr","c":"Normal","z":"61761","co":"McLean","r":"Bloomington","m":137},{"n":"Revolution Dispensary Schaumburg","s":"820 E. Golf Rd.","c":"Schaumburg","z":"60173","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Rise - Canton","s":"3104 N Main St","c":"Canton","z":"61520","co":"Fulton","r":"West Central Illinois Nonmetropolitan","m":165},{"n":"Rise - Effingham","s":"1011 Ford Ave Ste C","c":"Effingham","z":"62401","co":"Effingham","r":"East Central IL Nonmetropolitan","m":215},{"n":"Rise - Joliet  Colorado Ave","s":"2903 Colorado Ave.","c":"Joliet","z":"60431","co":"Will","r":"Chicago-Naperville-Elgin","m":28},{"n":"Rise - Joliet  Rock Creek","s":"1627 Rock Creek Blvd","c":"Joliet","z":"60431","co":"Will","r":"Chicago-Naperville-Elgin","m":28},{"n":"Rise - Mundelein","s":"1325 Armour Blvd","c":"Mundelein","z":"60060","co":"Lake","r":"Chicago-Naperville-Elgin","m":40},{"n":"Rise - Naperville","s":"1700 Quincy Ave Ste 103","c":"Naperville","z":"60540","co":"DuPage","r":"Chicago-Naperville-Elgin","m":12},{"n":"Rise - Niles","s":"9621 N Milwaukee Ave.","c":"Niles","z":"60714","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Rise - Quincy","s":"2703 Broadway St","c":"Quincy","z":"62301","co":"Adams","r":"West Central Illinois Nonmetropolitan","m":250},{"n":"Rise Charleston","s":"909 Lincoln Ave.","c":"Charleston","z":"61920","co":"Coles","r":"East Central IL Nonmetropolitan","m":190},{"n":"Rise  Lake in the Hills","s":"270 N Randall Rd","c":"Lake In The Hills","z":"60156","co":"McHenry","r":"Chicago-Naperville-Elgin","m":45},{"n":"River Bluff Cannabis","s":"1350 Lake St.","c":"Roselle","z":"60172","co":"DuPage","r":"Chicago-Naperville-Elgin","m":12},{"n":"Seven Point - Danville","s":"380 Eastgate Dr.","c":"Danville","z":"61834","co":"Vermilion","r":"Danville","m":130},{"n":"Shangri La Dispensary","s":"3128 S Dirksen Pkwy","c":"Springfield","z":"62703","co":"Sangamon","r":"Springfield","m":200},{"n":"SHARE - Springfield","s":"3600 S 6th Street Rd","c":"Springfield","z":"62703","co":"Sangamon","r":"Springfield","m":200},{"n":"Smokehouse Fox Lake","s":"44 S US Highway 12","c":"Fox Lake","z":"60020","co":"Lake","r":"Chicago-Naperville-Elgin","m":55},{"n":"Snap Canna - Elk Grove Vilage","s":"840 E. Higgins Rd.","c":"Elk Grove Village","z":"60007","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Snap Canna - Pontiac","s":"1910 W Reynolds St Unit A","c":"Pontiac","z":"61764","co":"Livingston","r":"West Central Illinois Nonmetropolitan","m":95},{"n":"Sociale Park Ridge","s":"1036 Higgins Rd","c":"Park Ridge","z":"60068","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Spark'd - Crystal Lake","s":"330 State Route 31","c":"Crystal Lake","z":"60012","co":"McHenry","r":"Chicago-Naperville-Elgin","m":40},{"n":"Spark'd - Richmond","s":"9705 Prairie Ridge","c":"Richmond","z":"60071","co":"McHenry","r":"Chicago-Naperville-Elgin","m":60},{"n":"Spark'd Wicker Park","s":"1212 N Ashland Ave","c":"Chicago","z":"60622","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Sparkd Dispensary - South Loop","s":"2114 S Wabash Ave","c":"Chicago","z":"60616","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Sparkd  Winthrop Harbor","s":"935 Sheridan Rd","c":"Winthrop Harbor","z":"60096","co":"Lake","r":"Chicago-Naperville-Elgin","m":62},{"n":"Starbuds - Riverside","s":"2704 Harlem Ave","c":"Riverside","z":"60546","co":"Cook","r":"Chicago-Naperville-Elgin","m":12},{"n":"Starbuds - Summit","s":"5436 S Harlem Ave","c":"Summit","z":"60501","co":"Cook","r":"Chicago-Naperville-Elgin","m":15},{"n":"Starbuds Hoffman Estates","s":"5 E Golf Rd","c":"Hoffman Estates","z":"60169","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Starbuds WM","s":"101 W Ogden Ave","c":"Westmont","z":"60559","co":"DuPage","r":"Chicago-Naperville-Elgin","m":5},{"n":"Starbuds-Burbank","s":"7844 S Cicero Ave","c":"Burbank","z":"60459","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Stash - Peru","s":"1320 38th St","c":"Peru","z":"61354","co":"LaSalle","r":"Northwest Illinois nonmetropolitan area","m":85},{"n":"Stash - Richton Park","s":"22214 Governors Hwy","c":"Richton Park","z":"60471","co":"Cook","r":"Chicago-Naperville-Elgin","m":28},{"n":"Stash Orland Hills","s":"9545 167th St.","c":"Orland Hills","z":"60487","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Stashouse - Maryville","s":"2533 Vandalia St","c":"Collinsville","z":"62234","co":"Madison","r":"St. Louis, MO","m":275},{"n":"Stashouse - Moline","s":"4301 44th Ave","c":"Moline","z":"61265","co":"Rock Island","r":"Davenport-Moline-Rock Island","m":175},{"n":"Sunnyside - Buffalo Grove","s":"830 Milwaukee Ave","c":"Buffalo Grove","z":"60089","co":"Lake","r":"Chicago-Naperville-Elgin","m":35},{"n":"Sunnyside - Champaign","s":"1704 S Neil St Ste C","c":"Champaign","z":"61820","co":"Champaign","r":"Champaign-Urbana","m":130},{"n":"Sunnyside - Chi-River North","s":"436 N. Clark St.","c":"Chicago","z":"60654","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Sunnyside - Danville","s":"369 Lynch Dr.","c":"Danville","z":"61834","co":"Vermilion","r":"Danville","m":130},{"n":"Sunnyside - Elmwood Park","s":"7955 W Grand Ave","c":"Elmwood Park","z":"60707","co":"Peoria","r":"Peoria","m":18},{"n":"Sunnyside - Rockford","s":"2696 McFarland Rd","c":"Rockford","z":"61107","co":"Winnebago","r":"Rockford","m":90},{"n":"Sunnyside - Schaumburg","s":"1739 E. Golf Rd.","c":"Schaumburg","z":"60173","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Sunnyside - South Beloit","s":"7000 First Ranger Dr.","c":"South Beloit","z":"61080","co":"Winnebago","r":"Rockford","m":95},{"n":"Sunnyside - Wrigleyville","s":"3524 N. Clark St.","c":"Chicago","z":"60657","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Sunnyside  Naperville","s":"2740 W 75th St","c":"Naperville","z":"60564","co":"DuPage","r":"Chicago-Naperville-Elgin","m":12},{"n":"Supergood Store","s":"660 N. Wolf Rd.","c":"Des Plaines","z":"60016","co":"Cook","r":"Chicago-Naperville-Elgin","m":22},{"n":"Sway","s":"3340 N Halsted St.","c":"Chicago","z":"60657","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Terrabis - Dixon","s":"1679 S Galena Ave.","c":"Dixon","z":"61021","co":"Lee","r":"Northwest Illinois nonmetropolitan area","m":95},{"n":"Terrabis - Grayville","s":"105 Koehler St.","c":"Grayville","z":"62844","co":"White","r":"South Illinois Nonmetropolitan","m":340},{"n":"Terrabis - Mundelein","s":"3210 W II Route 60","c":"Mundelein","z":"60060","co":"Lake","r":"Chicago-Naperville-Elgin","m":40},{"n":"Terrabis - Woodstock","s":"601 S Eastwood Dr","c":"Woodstock","z":"60098","co":"McHenry","r":"Chicago-Naperville-Elgin","m":55},{"n":"Terrabis Plainfield","s":"16020 S Route 59","c":"Plainfield","z":"60586","co":"Will","r":"Chicago-Naperville-Elgin","m":30},{"n":"Terrace - Alton","s":"1400 E Broadway","c":"Alton","z":"62002","co":"Madison","r":"St. Louis, MO","m":272},{"n":"Terrace Cannabis - Milan","s":"800 Tech Dr","c":"Milan","z":"61264","co":"Rock Island","r":"Davenport-Moline-Rock Island","m":178},{"n":"Terrace Moline","s":"2727 Avenue of the Cities","c":"Moline","z":"61265","co":"Rock Island","r":"Davenport-Moline-Rock Island","m":175},{"n":"The Carbondale Dispensary","s":"613 E Main St.","c":"Carbondale","z":"62901","co":"Jackson","r":"Carbondale-Marion","m":320},{"n":"The Dispensary","s":"1801 16th Ave","c":"Fulton","z":"61252","co":"Fulton","r":"West Central Illinois Nonmetropolitan","m":110},{"n":"The Dispensary Champaign","s":"1826 Glenn Park Dr","c":"Champaign","z":"61821","co":"Champaign","r":"Champaign-Urbana","m":130},{"n":"The Dispensary  East Dubuque","s":"1709 Il Route 35 N","c":"East Dubuque","z":"61025","co":"Jo Daviess","r":"Northwest Illinois nonmetropolitan area","m":155},{"n":"The Happy Cannabis Company - Rockford","s":"4777 Stenstrom Rd","c":"Rockford","z":"61109","co":"Winnebago","r":"Rockford","m":90},{"n":"The Happy Cannabis Company  Loves Park","s":"4120 N Bell School Rd","c":"Loves Park","z":"61111","co":"Winnebago","r":"Rockford","m":92},{"n":"Thrive - Casey","s":"912 N Route 49","c":"Casey","z":"62420","co":"Clark","r":"East Central IL Nonmetropolitan","m":200},{"n":"Thrive Anna","s":"87 Richview Drive","c":"Anna","z":"62906","co":"Union","r":"South Illinois Nonmetropolitan","m":360},{"n":"Thrive Dispensary - Mt. Vernon","s":"800 S 45th St","c":"Mount Vernon","z":"62864","co":"Jefferson","r":"South Illinois Nonmetropolitan","m":305},{"n":"Thrive Harrisburg","s":"105 N Veterans Drive","c":"Harrisburg","z":"62946","co":"Saline","r":"South Illinois Nonmetropolitan","m":340},{"n":"Thrive Metropolis","s":"1551 E. 5th St.","c":"Metropolis","z":"62960","co":"Massac","r":"South Illinois Nonmetropolitan","m":372},{"n":"Tree Haus - Diamond","s":"2910 E. Division St","c":"Diamond","z":"60416","co":"Will","r":"Chicago-Naperville-Elgin","m":50},{"n":"Tree Haus Morris","s":"50 Gore Rd","c":"Morris","z":"60450","co":"Grundy","r":"Chicago-Naperville-Elgin","m":50},{"n":"Trinity Compassionate Care Center","s":"2301 W. Glen Ave.","c":"Peoria","z":"61614","co":"Peoria","r":"Peoria","m":150},{"n":"Trinity Compassionate Care Centers","s":"3125 N University St Ste B","c":"Peoria","z":"61604","co":"Peoria","r":"Peoria","m":150},{"n":"Tru Essence Arlington Heights","s":"792 E Rand Rd.","c":"Arlington Heights","z":"60004","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"UMI - Chicago","s":"2575 N Lincoln Ave.","c":"Chicago","z":"60614","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Verilife Arlington Heights","s":"1816 S Arlington Heights Rd","c":"Arlington Heights","z":"60005","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Verilife  Chicago River North","s":"60 W Superior St","c":"Chicago","z":"60654","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Verilife  Galena","s":"115 Perry St.","c":"Galena","z":"61036","co":"Jo Daviess","r":"Northwest Illinois nonmetropolitan area","m":145},{"n":"Verilife North Aurora","s":"2080 West Orchard Rd","c":"North Aurora","z":"60542","co":"Kane","r":"Chicago-Naperville-Elgin","m":22},{"n":"Verilife Ottawa","s":"4100 Columbus St","c":"Ottawa","z":"61350","co":"LaSalle","r":"Northwest Illinois nonmetropolitan area","m":80},{"n":"Verilife Romeoville","s":"412 N Weber Rd","c":"Romeoville","z":"60446","co":"Will","r":"Chicago-Naperville-Elgin","m":22},{"n":"Verilife  Rosemont","s":"5540 Park Pl","c":"Rosemont","z":"60018","co":"Cook","r":"Chicago-Naperville-Elgin","m":18},{"n":"Verilife  Schaumburg","s":"150 N Barrington Rd","c":"Schaumburg","z":"60194","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Vertical Dispensary","s":"20 Northwest Hwy","c":"Cary","z":"60013","co":"McHenry","r":"Chicago-Naperville-Elgin","m":25},{"n":"Vertical People Dispensary","s":"300 Washington Ave.","c":"Cairo","z":"62914","co":"Alexander","r":"Cape Girardeau, MO","m":380},{"n":"Village Bucktown","s":"1850 W Webster Ave","c":"Chicago","z":"60614","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Village Dispensary - Godfrey","s":"110 Homer M Adams Pkwy","c":"Alton","z":"62002","co":"Madison","r":"St. Louis, MO","m":272},{"n":"Viola CHI","s":"1516 W Roosevelt Rd.","c":"Broadview","z":"60155","co":"Cook","r":"Chicago-Naperville-Elgin","m":12},{"n":"Windy City Cannabis - Litchfield","s":"719 W Union Ave","c":"Litchfield","z":"62056","co":"Montgomery","r":"West Central Illinois Nonmetropolitan","m":230},{"n":"Windy City Cannabis  Carpentersville","s":"125 S Western Ave","c":"Carpentersville","z":"60110","co":"Kane","r":"Chicago-Naperville-Elgin","m":35},{"n":"Windy City Cannabis  Highwood","s":"260 Green Bay Rd.","c":"Highwood","z":"60040","co":"Lake","r":"Chicago-Naperville-Elgin","m":25},{"n":"Windy City Cannabis Homewood","s":"1137 W. 175th St","c":"Homewood","z":"60430","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Windy City Cannabis  Macomb","s":"518 W Jackson St","c":"Macomb","z":"61455","co":"McDonough","r":"West Central Illinois Nonmetropolitan","m":185},{"n":"Windy City Cannabis Posen","s":"2535 Veterans Dr","c":"Posen","z":"60469","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Zen Leaf - West Loop","s":"222 S Halsted St","c":"Chicago","z":"60661","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Zen Leaf Evanston","s":"1804 Maple Ave","c":"Evanston","z":"60201","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Zen Leaf Highland Park","s":"2030 Skokie Valley Rd","c":"Highland Park","z":"60035","co":"Lake","r":"Chicago-Naperville-Elgin","m":35},{"n":"Zen Leaf Naperville","s":"1516 N. Naper Blvd, Spc 100","c":"Naperville","z":"60563","co":"DuPage","r":"Chicago-Naperville-Elgin","m":12},{"n":"Zen Leaf Prospect Heights","s":"1434 N Rand Rd.","c":"Prospect Heights","z":"60070","co":"Cook","r":"Chicago-Naperville-Elgin","m":25},{"n":"Zen Leaf Rogers Park","s":"7305 N Rogers Ave","c":"Chicago","z":"60626","co":"Cook","r":"Chicago-Naperville-Elgin","m":20},{"n":"Zen Leaf St. Charles","s":"3691 E. Main St.","c":"Saint Charles","z":"60174","co":"Kane","r":"Chicago-Naperville-Elgin","m":20},{"n":"ZenLeaf - Aurora","s":"740 IL Rte 59","c":"Aurora","z":"60504","co":"DuPage","r":"Chicago-Naperville-Elgin","m":25},{"n":"ZenLeaf  Lombard","s":"783 Butterfield Rd.","c":"Lombard","z":"60148","co":"DuPage","r":"Chicago-Naperville-Elgin","m":8},{"n":"ZenLeaf Pilsen","s":"1301 S Western Ave","c":"Chicago","z":"60608","co":"Cook","r":"Chicago-Naperville-Elgin","m":20}];
+
+const PICKUPS = [{"n":"1 Green Roots INC","s":"4500 S Kolin Ave","c":"Chicago","z":"60632","m":20},{"n":"11th Level Inc","s":"1125 Carnegie Street","c":"Rolling Meadows","z":"60008","m":22},{"n":"1248 IP Holdings","s":"1121 Hickox","c":"Lincoln","z":"62656","m":185},{"n":"33rd Division A Minority Veterans Unit LLC","s":"12054 South Dory Ave","c":"Chicago","z":"60628","m":20},{"n":"AG PHARM LLC","s":"3600 S 6th Street Rd, Ste B","c":"Springfield","z":"62703","m":178},{"n":"Alchemy Curations, LLC","s":"20420 Windy Hill Rd","c":"Harvard","z":"60033","m":65},{"n":"Ascend Illinois (Barry)","s":"1 310th Ave","c":"Barry","z":"62312","m":250},{"n":"Ataraxia LLC","s":"884 Industrial St","c":"Albion","z":"62806","m":280},{"n":"Baked Buds Company LLC","s":"1958 W. Lake St","c":"Chicago","z":"60612","m":20},{"n":"Bedford Grow LLC","s":"5550 W 70th Pl","c":"Bedford Park","z":"60638","m":15},{"n":"BenWitz LLC","s":"1111 W 35th St","c":"Chicago","z":"60609","m":18},{"n":"Big Bluestem Ventures LLC","s":"1461 Lunt Ave","c":"Elk Grove Village","z":"60007","m":20},{"n":"Big City Ventures LLC","s":"101 N. Main Street","c":"East St Louis","z":"62201","m":280},{"n":"Blissful Botanics LLC","s":"2500 S Troy St","c":"Chicago","z":"60623","m":20},{"n":"Bolden Investments IV LLC","s":"1703 Interstate Drive","c":"Champaign","z":"61822","m":130},{"n":"Botanicannabis","s":"455 Comanche Circle","c":"Harvard","z":"60033","m":65},{"n":"C & R Holdings Grow LLC","s":"3300 W Franklin Blvd","c":"Chicago","z":"60624","m":18},{"n":"C6 Farms LLC","s":"800 E Main St","c":"Carbondale","z":"62901","m":320},{"n":"C6 Farms LLC (Craft)","s":"800 E Main St","c":"Carbondale","z":"62901","m":315},{"n":"Cannassentials LLC","s":"2415 W 24th Pl","c":"Chicago","z":"60608","m":20},{"n":"Cannect Gardens LLC","s":"3700 Sandra St","c":"Franklin Park","z":"60131","m":18},{"n":"CentoVentiCinque LLC","s":"2620 Auburn St.","c":"Rockford","z":"61101","m":90},{"n":"Chicago Greenz LLC","s":"4429 W Division","c":"Chicago","z":"60651","m":20},{"n":"CNS Harvest LLC","s":"6360 Emerald Pkwy, Units 106/107","c":"Monee","z":"60449","m":30},{"n":"Compass Ventures, Inc.","s":"815 Industrial Dr","c":"Litchfield","z":"62056","m":220},{"n":"COPACK INDUSTRIES, LLC","s":"3451 Lumber Ln","c":"Springfield","z":"62707","m":178},{"n":"Craft Opportunities LLC","s":"1300 Bowes Rd","c":"Elgin","z":"60123","m":35},{"n":"CRAFT SALES R US LLC (Echelon Grow)","s":"2400 Greenleaf Ave","c":"Elk Grove Village","z":"60007","m":20},{"n":"Cresco Labs LLC Joliet","s":"3301 Centerpoint Way","c":"Joliet","z":"60436","m":30},{"n":"Cresco Labs LLC Kankakee","s":"3625 S US Highway 45 52","c":"Kankakee","z":"60901","m":60},{"n":"Cresco Labs LLC Lincoln","s":"1432 1800th St","c":"Lincoln","z":"62656","m":185},{"n":"CRIG Inc.","s":"25 Airport Dr","c":"Rockford","z":"61109","m":85},{"n":"CRM Enterprises LLC","s":"1525 Paramount Pkwy","c":"Batavia","z":"60510","m":22},{"n":"Culinary Cannabis Company","s":"1245 E. Forest Ave, Unit 9","c":"Des Plaines","z":"60018","m":22},{"n":"Curative Health Cultivation, LLC","s":"2229 Diehl Rd","c":"Aurora","z":"60502","m":20},{"n":"Dank Creek LLC","s":"6900 Santa Fe Dr","c":"Hodgkins","z":"60525","m":12},{"n":"Dragon Tail Holding LLC","s":"9898 Route 78","c":"Bath","z":"62617","m":148},{"n":"DRECISCO FARMS, LLC","s":"21906 W Grant Hwy","c":"Marengo","z":"60152","m":60},{"n":"Elevated Institute LLC","s":"107 West Franklin","c":"Sesser","z":"62884","m":340},{"n":"Elevated Organics LLC","s":"5838 Howard St","c":"Skokie","z":"60077","m":25},{"n":"Emerald Valley Industries LLC (Green Team)","s":"5761 International Pkwy","c":"Springfield","z":"62711","m":175},{"n":"Evoke Ventures Group Inc","s":"711 W 15th St","c":"Chicago Heights","z":"60411","m":25},{"n":"Exxotic Strains LLC Bellwood","s":"2821 Grant Ave","c":"Bellwood","z":"60104","m":18},{"n":"Exxotic Strains LLC Chicago","s":"12233 S Avenue O","c":"Chicago","z":"60633","m":22},{"n":"Flora Arbor LLC","s":"1300 Abbott Dr","c":"Elgin","z":"60123","m":35},{"n":"Future of the Leaf Infusers LLC","s":"3900 Mercy Dr.","c":"McHenry","z":"60050","m":50},{"n":"Galaxy Labs LLC","s":"22240 Governors Hwy","c":"Richton Park","z":"60471","m":32},{"n":"GCF Industries Inc","s":"1413 Sherman Rd","c":"Romeoville","z":"60446","m":22},{"n":"GCF Industries Inc. (Craft)","s":"220 Poplar Place","c":"North Aurora","z":"60542","m":30},{"n":"GF IL Infuser LLC","s":"3300 E. Broadway","c":"Alton","z":"62002","m":272},{"n":"GP Wellness LLC","s":"4500 Prime Pkwy","c":"McHenry","z":"60050","m":50},{"n":"Grand Legacy Group LLC","s":"450 Shepard Dr","c":"Elgin","z":"60123","m":35},{"n":"Green Card Veterans of Broadview","s":"3 Donna Dr","c":"Tilton","z":"61833","m":135},{"n":"Green Card Veterans of McHenry (La Vida Mota)","s":"3707 N Division St","c":"Morris","z":"60450","m":52},{"n":"Green Gem Industries Inc","s":"30860 S Yates Ave","c":"Beecher","z":"60401","m":42},{"n":"Green Growth Group Inc","s":"13224 N Chestnut Ln","c":"Mount Vernon","z":"62864","m":245},{"n":"Green Monk LLC","s":"2223 Washington St","c":"Evanston","z":"60202","m":22},{"n":"Green Therapy Cultivation LLC","s":"Hwy 15 & 810 N Funkhouser","c":"Albion","z":"62806","m":280},{"n":"GRI Holdings LLC","s":"740 Schneider Dr.","c":"South Elgin","z":"60177","m":35},{"n":"GRI Holdings, LLC","s":"740 Schneider Dr","c":"South Elgin","z":"60177","m":35},{"n":"Gron IL LLC","s":"1509 W. Lemoyne St.","c":"Melrose Park","z":"60160","m":14},{"n":"Grow CD LLC","s":"1709 Eastwood Dr","c":"Aurora","z":"60506","m":35},{"n":"GTI Oglesby","s":"110 E 4th Rd","c":"Oglesby","z":"61348","m":80},{"n":"GTI Rock Island LLC","s":"8221 51st St W","c":"Rock Island","z":"61201","m":155},{"n":"Guaranteed Investments Corp","s":"7401 S State St","c":"Chicago","z":"60619","m":20},{"n":"HDC Group LLC","s":"1291 Brummel Ave","c":"Elk Grove Village","z":"60007","m":18},{"n":"Helios Labs LLC","s":"2150 Parkes Dr","c":"Broadview","z":"60155","m":15},{"n":"Herb Haus Holdings I, LLC","s":"4131 W Albany Street","c":"McHenry","z":"60050","m":45},{"n":"Herban Garden LLC","s":"24109 S Northern Illinois Dr","c":"Channahon","z":"60410","m":30},{"n":"Herold Moss Management LLC","s":"2010 N State Route 23","c":"Marengo","z":"60152","m":60},{"n":"Hi Rise Group LLC","s":"32040 S Route 45","c":"Peotone","z":"60468","m":42},{"n":"High Haven Extract LLC","s":"176 Kirkland Cir","c":"Oswego","z":"60543","m":25},{"n":"High Solutions LLC","s":"735 W Main St","c":"Galesburg","z":"61401","m":168},{"n":"HSRZ Management LLC","s":"8549 Beloit Ave","c":"Bridgeview","z":"60455","m":15},{"n":"HT 23 Custom Crafters LLC","s":"180 Joe Orr Rd","c":"Chicago Heights","z":"60411","m":30},{"n":"IESO LLC","s":"3235 New Era Rd","c":"Murphysboro","z":"62966","m":320},{"n":"IL Grown Medicine","s":"5500 Adams Street","c":"Matteson","z":"60443","m":30},{"n":"Illinois Collective INC","s":"170 Detroit St","c":"Cary","z":"60013","m":45},{"n":"Illinois Kindness Four LLC","s":"7537 Central Ave","c":"Skokie","z":"60077","m":25},{"n":"Imperial Products LLC","s":"2638 Davisson St","c":"River Grove","z":"60171","m":16},{"n":"In Grown Farms, LLC","s":"3597 E Colby Rd","c":"Freeport","z":"61032","m":90},{"n":"In Labs II LLC","s":"Cockrell Lane","c":"Springfield","z":"62711","m":178},{"n":"Indus365 Grow LLC","s":"5005 Indus","c":"Decatur","z":"62522","m":158},{"n":"Jade Infusion LLC","s":"4044 McDonough St","c":"Joliet","z":"60431","m":28},{"n":"JG IL, LLC","s":"93 Route 37","c":"Edgewood","z":"62426","m":195},{"n":"John & Joe Farms Inc.","s":"1105 West Main","c":"Streator","z":"61364","m":88},{"n":"K Town Grow LLC","s":"Lot 18 of I-64 Plaza","c":"Grayville","z":"62844","m":265},{"n":"Kamikaze Circle LLC","s":"810 W Pershing Rd","c":"Chicago","z":"60609","m":18},{"n":"Kannavir Innovations LLC","s":"955 N 1st St","c":"Fairmont City","z":"62201","m":282},{"n":"Kannavir Innovations LLC (Craft)","s":"955 N 1st St","c":"East Saint Louis","z":"62201","m":280},{"n":"Karuna Ventures IL LLC","s":"1401 Circle Ave","c":"Forest Park","z":"60130","m":12},{"n":"Kijani Leaf LLC","s":"14200 Crawford Ave","c":"Crestwood","z":"60445","m":18},{"n":"Kitsune Labs LLC","s":"810 W Pershing Rd","c":"Chicago","z":"60609","m":20},{"n":"Krown LLC","s":"845 Brenkman Dr.","c":"Pekin","z":"61554","m":158},{"n":"Kush 312 Infusers LLC","s":"1000 Greenleaf Ave","c":"Elk Grove Village","z":"60007","m":18},{"n":"Lincoln Labs LLC","s":"5965 W State Route 97","c":"Pleasant Plains","z":"62677","m":178},{"n":"Little Egypt Enterprises (Canabliss Depot)","s":"2655 E Park Rd","c":"Metropolis","z":"62960","m":372},{"n":"Mae Lee Tinker LLC","s":"804 East Anthony","c":"Urbana","z":"61802","m":130},{"n":"MarqKano LLC","s":"93 Route 37","c":"Edgewood","z":"62426","m":195},{"n":"Mastoura Corporation","s":"2355 N Damen Ave","c":"Chicago","z":"60647","m":20},{"n":"MCCD Production LLC","s":"228 Energy Ave","c":"Rockford","z":"61109","m":85},{"n":"MIA Infusion LLC","s":"115 S Harris Dr, Unit F","c":"Rockdale","z":"60436","m":30},{"n":"Mia's Heart Collaborative LLC","s":"1554 Chapel Hill Rd","c":"Pulaski","z":"62976","m":345},{"n":"Mint IL Craft LLC","s":"7550 Industrial Dr","c":"Forest Park","z":"60130","m":15},{"n":"MJ Organics Company","s":"4359 S Hickory St","c":"Pembroke Twp","z":"60958","m":90},{"n":"MME Illinois LLC (Contract Canna)","s":"17475 Palmer Blvd","c":"Hazel Crest","z":"60430","m":22},{"n":"MMXX Capital Partners","s":"5436 S Harlem Ave","c":"Summit","z":"60501","m":15},{"n":"Moore Blounts, LLC","s":"22834 Old Mill Rd","c":"Olive Branch","z":"62969","m":340},{"n":"Nature's Grace and Wellness, LLC","s":"230 E Van Fossen Rd","c":"Vermont","z":"61484","m":160},{"n":"Nature's Safe LLC","s":"1202 2nd Ave.","c":"Rapids City","z":"61278","m":180},{"n":"Nature's Safe LLC (Craft)","s":"1005 11th St W","c":"Milan","z":"61264","m":158},{"n":"Natures Edibles LLC","s":"1585 Beverly Ct, Units 124-125","c":"Aurora","z":"60502","m":20},{"n":"NBCG Partners LLC","s":"300 American Way","c":"Du Quoin","z":"62832","m":275},{"n":"NPI Hillcrest Investors, LLC","s":"16280 E Twombly Rd","c":"Rochelle","z":"61068","m":90},{"n":"Oregonix Farms LLC","s":"16520 Harmony Rd","c":"Huntley","z":"60142","m":40},{"n":"Organic Urban Revitalization Solutions","s":"1176 N Cherry Ave","c":"Chicago","z":"60642","m":20},{"n":"Origins Sale Illinois LLC","s":"1830 N Lamon Ave","c":"Chicago","z":"60639","m":18},{"n":"PharmaCann Inc - Dwight","s":"1200 E Mazon Ave, Ste A","c":"Dwight","z":"60420","m":68},{"n":"Piffington LLC","s":"626 E. 111th St","c":"Chicago","z":"60628","m":20},{"n":"Prairie State Cannabis LLC","s":"201 Shady Ln","c":"Macomb","z":"61455","m":178},{"n":"Progressive Treatment Solutions LLC","s":"737 Locust St","c":"East Saint Louis","z":"62201","m":280},{"n":"Public Square LLC","s":"1534 S Western Ave","c":"Chicago","z":"60608","m":18},{"n":"R3 Veteran Flowers LLC (Aurora)","s":"1703 Eastwood Dr","c":"Aurora","z":"60506","m":35},{"n":"R3 Veteran Flowers LLC (Univ Park)","s":"2545 Palmer Ave","c":"University Park","z":"60484","m":42},{"n":"Racine Product Inc","s":"8151 S Racine Ave","c":"Chicago","z":"60620","m":22},{"n":"RB Vending Investments LLC","s":"3201 E End Ave","c":"South Chicago Heights","z":"60411","m":28},{"n":"Realeaf Botanicals LLC","s":"1777 2nd Avenue North","c":"Silvis","z":"61282","m":148},{"n":"Revolt Labs LLC","s":"26 Fairmont City Blvd.","c":"Fairmont City","z":"62071","m":280},{"n":"Revolution Cannabis Delavan, LLC","s":"1 Revolution Way","c":"Delavan","z":"61734","m":150},{"n":"River Bluff Growers LLC","s":"1900 Harrison Ave","c":"Rockford","z":"61104","m":85},{"n":"Riverway Craft Laboratories LLC","s":"300 Hanna Drive","c":"Pekin","z":"61554","m":160},{"n":"Rogue EBC LLC","s":"345 N Lakewood Ave","c":"Waukegan","z":"60085","m":45},{"n":"Root 66 LWCA","s":"3455 Washington St","c":"Park City","z":"60085","m":45},{"n":"RQG Investments LLC","s":"2810 Auburn St","c":"Rockford","z":"61101","m":85},{"n":"Rt 66 Rec LLC","s":"1823 Camp Lincoln Rd","c":"Springfield","z":"62707","m":178},{"n":"SB IL Grow LLC","s":"3381 Forest View Rd","c":"Rockford","z":"61109","m":85},{"n":"SEA Craft LLC","s":"1200 E Mazon Ave","c":"Dwight","z":"60420","m":68},{"n":"SEA CRAFT PARTNERS LLC","s":"9933 S. Cottage Grove Ave","c":"Chicago","z":"60628","m":22},{"n":"Seven Leaves LLC","s":"600 Wall St","c":"Glendale Heights","z":"60139","m":8},{"n":"Seventh Generation Illinois Farmers LLC","s":"1002 W North St","c":"Pontiac","z":"61764","m":90},{"n":"Shelby County Community Services","s":"1949 E 1700 N Road","c":"Shelbyville","z":"62565","m":165},{"n":"SLI LLC","s":"1411 S Eastwood Dr","c":"Woodstock","z":"60098","m":55},{"n":"Sol-Canna LLC","s":"800 31st Ave","c":"Fulton","z":"61252","m":135},{"n":"Stash Ventures IL LLC (Dose Labs)","s":"11007 State Route 120","c":"Woodstock","z":"60098","m":55},{"n":"STONEY LLC","s":"12353 Stony Branch Rd","c":"Rushville","z":"62681","m":180},{"n":"Sustainable Innovations Inc","s":"1221 Research Pkwy","c":"Rockford","z":"61109","m":90},{"n":"Sustainable Innovations Inc (Craft)","s":"613 Old Fairfield Rd","c":"Mt Vernon","z":"62864","m":245},{"n":"Trade Secret Cultivation LLC","s":"1325 N Marion St","c":"Carbondale","z":"62901","m":315},{"n":"Treatmints LLC","s":"4429 W Division St","c":"Chicago","z":"60612","m":20},{"n":"TWM Equities LLC","s":"2116 State St","c":"Chicago Heights","z":"60411","m":28},{"n":"Tynnsworth LLC","s":"93 Route 37","c":"Edgewood","z":"62426","m":195},{"n":"UHCC Inc","s":"99 W Greenwood Ave","c":"Waukegan","z":"60087","m":45},{"n":"Uprise Products Illinois LLC","s":"1365-67 W 37th Street","c":"Chicago","z":"60609","m":20},{"n":"Urban Synergy, LLC","s":"4500 W Fillmore St #12","c":"Chicago","z":"60624","m":18},{"n":"Verdant Labs LLC","s":"17082 Malone Rd","c":"Thompsonville","z":"62890","m":295},{"n":"Vertical Management LLC","s":"20 NW Hwy.","c":"Cary","z":"60013","m":40},{"n":"Veteran Cannabis Cultivators LLC","s":"430 E Plainfield Rd","c":"Countryside","z":"60525","m":10},{"n":"Wellness Group Pharms LLC","s":"690 Lick Creek Rd","c":"Anna","z":"62906","m":340},{"n":"Winter Haze Edibles","s":"1014 SW Adams St","c":"Peoria","z":"61602","m":150},{"n":"Wyvern Botanicals Inc.","s":"1201 E Morton Ave","c":"Jacksonville","z":"62650","m":215},{"n":"Zakdel LLC","s":"6119 East Ave","c":"Hodgkins","z":"60525","m":12}];
+
+// ══ Billing constants ══
+const MARKUP=2.5, MPG=19, GAS_RATE=7.50, INS_CHG=200, INS_ACT=109.09;
+const OH=22000, OH_RUN=800, SUR_MILE_CUR=0.35, SUR_MILE_NEW=0.85, SUR_LIMIT=200, AUG=3000;
+
+// ══ Location defaults ══
+const DEFAULT_ORIGINS = [
+  {name:'GST — Oakbrook Terrace', address:'17W703 Butterfield Rd, Oakbrook Terrace, IL 60181', lat:41.8492, lon:-87.9786}
+];
+
+// ══ State ══
+let savedOrigins = [];
+let clientType = 'current'; // 'current' or 'new'
+let currentOrigin = {name:'GST — Oakbrook Terrace', address:'17W703 Butterfield Rd, Oakbrook Terrace, IL 60181', lat:41.8492, lon:-87.9786};
+let stops = [];          // [{id, type:'disp'|'custom', disp:obj|null, addr:string, lat:null, lon:null, name:string}]
+let stopIdCnt = 0;
+let geocacheMap = {};
+let ownerOn = false;
+let autoMiles = false;
+
+// ══ Init ══
+function init(){
+  loadOrigins();
+  renderOrigins();
+  addStop();
+  calculate();
+}
+
+// ══ Saved Locations ══
+function loadOrigins(){
+  const saved = localStorage.getItem('gst_origins');
+  const extra = saved ? JSON.parse(saved) : [];
+  savedOrigins = [...DEFAULT_ORIGINS, ...extra];
+}
+function persistOrigins(){
+  const extra = savedOrigins.filter((_,i)=>i>=DEFAULT_ORIGINS.length);
+  localStorage.setItem('gst_origins', JSON.stringify(extra));
+}
+function renderOrigins(){
+  renderLocList(); // kept for saved locations panel
+}
+function renderLocList(){
+  const el = document.getElementById('savedLocList');
+  if(savedOrigins.length===0){el.innerHTML='<div style="font-size:.78rem;color:#454444;padding:6px">No saved locations.</div>';return}
+  el.innerHTML = savedOrigins.map((o,i)=>`
+    <div class="saved-loc-item">
+      <div><div class="sli-name">${o.name}</div><div class="sli-addr">${o.address}</div></div>
+      ${i>=DEFAULT_ORIGINS.length?`<button class="sli-del" onclick="deleteLoc(${i})" title="Delete">&#10005;</button>`:'<span style="font-size:.68rem;color:#454444;padding:2px 6px">Default</span>'}
+    </div>`).join('');
+}
+function toggleLocMgr(){
+  document.getElementById('locMgr').classList.toggle('open');
+}
+function saveNewLoc(){
+  const name = document.getElementById('newLocName').value.trim();
+  const addr = document.getElementById('newLocAddr').value.trim();
+  if(!name||!addr){alert('Please enter both a name and address.');return}
+  savedOrigins.push({name, address:addr, lat:null, lon:null});
+  persistOrigins();
+  renderOrigins();
+  document.getElementById('newLocName').value='';
+  document.getElementById('newLocAddr').value='';
+  showStatus('routeStatus','Location saved.','ok');
+}
+function deleteLoc(i){
+  if(!confirm('Delete this location?'))return;
+  savedOrigins.splice(i,1);
+  persistOrigins();
+  renderOrigins();
+}
+
+
+// ══ Origin Search ══
+function openOriginSearch(){
+  document.getElementById('originChip').style.display='none';
+  const wrap=document.getElementById('originSearchWrap');
+  wrap.style.display='block';
+  const inp=document.getElementById('originSearchInput');
+  inp.value='';inp.focus();filterOriginDrop();
+}
+function closeOriginSearch(){
+  document.getElementById('originSearchWrap').style.display='none';
+  document.getElementById('originChip').style.display='flex';
+  document.getElementById('originDrop').style.display='none';
+}
+function hideOriginDrop(){
+  document.getElementById('originDrop').style.display='none';
+}
+function filterOriginDrop(){
+  const q=document.getElementById('originSearchInput').value.toLowerCase().trim();
+  const dd=document.getElementById('originDrop');
+  const res=[];
+  // GST Oakbrook — always first
+  const gst=DEFAULT_ORIGINS[0];
+  if(!q||gst.name.toLowerCase().includes(q)||gst.address.toLowerCase().includes(q))
+    res.push({name:gst.name,addr:gst.address,lat:gst.lat,lon:gst.lon,badge:'&#11088; DEFAULT'});
+  // Saved custom origins
+  savedOrigins.slice(DEFAULT_ORIGINS.length).forEach(o=>{
+    if(!q||o.name.toLowerCase().includes(q)||o.address.toLowerCase().includes(q))
+      res.push({name:o.name,addr:o.address,lat:o.lat||null,lon:o.lon||null,badge:'Saved'});
+  });
+  if(q.length>=1){
+    // Dispensaries
+    DISP.filter(d=>d.n.toLowerCase().includes(q)||d.c.toLowerCase().includes(q)).slice(0,12).forEach(d=>{
+      res.push({name:d.n,addr:d.s+', '+d.c+', IL '+d.z,lat:null,lon:null,mi:d.m,badge:'Dispensary'});
+    });
+    // Pickup/Supply
+    PICKUPS.filter(d=>d.n.toLowerCase().includes(q)||d.c.toLowerCase().includes(q)).slice(0,10).forEach(d=>{
+      res.push({name:d.n,addr:d.s+', '+d.c+', IL '+d.z,lat:null,lon:null,mi:d.m,badge:'Pickup'});
+    });
+  }
+  window._origRes=res;
+  if(!res.length){dd.innerHTML='<div class="sd-item" style="color:#454444;font-style:italic;font-size:.8rem">No matches — use "Use typed address" below</div>';dd.style.display='block';return;}
+  dd.innerHTML=res.map((r,i)=>`<div class="sd-item" onmousedown="selectOriginItem(${i})">
+    <span class="rbadge" style="background:#0e1e30;color:#6795af;font-size:.62rem">${r.badge}</span>
+    ${r.mi?`<span class="sdi-mi">${r.mi} mi</span>`:''}
+    <div class="sdi-name">${r.name}</div>
+    <div class="sdi-sub">${r.addr}</div></div>`).join('');
+  dd.style.display='block';
+}
+function selectOriginItem(i){
+  const r=window._origRes[i];
+  currentOrigin={name:r.name,address:r.addr,lat:r.lat,lon:r.lon};
+  document.getElementById('originChipName').textContent=r.name;
+  document.getElementById('originChipAddr').textContent=r.addr;
+  closeOriginSearch();
+}
+function useTypedAddress(){
+  const addr=document.getElementById('originSearchInput').value.trim();
+  if(!addr){alert('Please type an address first.');return;}
+  currentOrigin={name:addr,address:addr,lat:null,lon:null};
+  document.getElementById('originChipName').textContent=addr;
+  document.getElementById('originChipAddr').textContent='Custom address';
+  closeOriginSearch();
+}
+
+// ══ Route stops ══
+function addStop(){
+  const id = ++stopIdCnt;
+  stops.push({id, type:'disp', disp:null, infuser:null, addr:'', lat:null, lon:null, name:''});
+  renderStops();
+}
+function removeStop(id){
+  stops = stops.filter(s=>s.id!==id);
+  renderStops();
+}
+function renderStops(){
+  const el=document.getElementById('stopsList');
+  if(stops.length===0){el.innerHTML='<div style="font-size:.78rem;color:#454444;padding:8px 0">No stops added. Click &quot;+ Add Stop&quot; below.</div>';return}
+  el.innerHTML=stops.map((s,i)=>{
+    const isInf=s.type==='infuser';
+    const isDisp=s.type==='disp';
+    const selData=isDisp?s.disp:isInf?s.infuser:null;
+    const ph=isInf?'Type pickup/supply facility name or city...':'Type dispensary name, city or county...';
+    const inputVal=selData?selData.n:'';
+    const showSel=selData?'display:block':'display:none';
+    const selAddr=selData?(selData.s+', '+selData.c+', IL '+selData.z):'';
+    const borderColor=isInf?'#ff980033':isDisp?'#3e699333':'#2a3444';
+    const typeColor=isInf?'#ff9800':isDisp?'#6795af':'#959494';
+    const typeIcon=isInf?'&#128230; Pickup':'&#128233; Delivery';
+    return `<div class="stop-card" id="stopCard_${s.id}" style="border-color:${borderColor}">
+      <div class="stop-hdr">
+        <span class="stop-num" style="color:${typeColor}">Stop ${i+1} <span style="font-size:.65rem;font-weight:400;margin-left:4px">${typeIcon}</span></span>
+        <button class="stop-del" onclick="removeStop(${s.id})">&#10005; Remove</button>
+      </div>
+      <div class="stop-type-tabs">
+        <button class="stt${isDisp?' active':''}" onclick="setStopType(${s.id},'disp')">&#128233; Dispensary</button>
+        <button class="stt${isInf?' active':''}" onclick="setStopType(${s.id},'infuser')" ${isInf?'style="border-color:#ff9800;color:#ff9800;background:#1a0d00"':''}>&#128230; Pickup/Supply</button>
+        <button class="stt${s.type==='custom'?' active':''}" onclick="setStopType(${s.id},'custom')">&#9999; Custom</button>
+      </div>
+      ${s.type!=='custom'?`
+        <div class="stop-search-wrap">
+          <input type="text" class="stop-search-input" id="ss_${s.id}" placeholder="${ph}"
+            oninput="filterStop(${s.id})" onfocus="showStopDD(${s.id})" onblur="hideStopDD(${s.id})"
+            value="${inputVal}">
+          <div class="stop-dd" id="sd_${s.id}"></div>
+        </div>
+        <div class="stop-selected" id="ssel_${s.id}" style="${showSel}">
+          <button class="ss-clear" onclick="clearStopSel(${s.id})">&#10005; clear</button>
+          <div class="ss-name">${selData?selData.n:''}</div>
+          <div class="ss-addr">${selAddr}</div>
+        </div>
+      `:`
+        <div class="field" style="margin:0">
+          <input type="text" placeholder="Full address (Street, City, State ZIP)"
+            value="${s.addr}" onchange="setCustomAddr(${s.id},this.value)" style="background:#161b22">
+        </div>
+      `}
+    </div>`;
+  }).join('');
+}
+function setStopType(id, type){
+  const s = stops.find(x=>x.id===id);
+  if(s){s.type=type;s.disp=null;s.infuser=null;s.addr='';s.lat=null;s.lon=null;s.name='';renderStops()}
+}
+function filterStop(id){
+  const q=(document.getElementById('ss_'+id).value||'').toLowerCase().trim();
+  const dd=document.getElementById('sd_'+id);
+  const stop=stops.find(x=>x.id===id);
+  if(!q){dd.style.display='none';return}
+  if(stop&&stop.type==='infuser'){
+    const matches=PICKUPS.filter(d=>d.n.toLowerCase().includes(q)||d.c.toLowerCase().includes(q)).slice(0,35);
+    if(!matches.length){dd.style.display='none';return}
+    dd.innerHTML=matches.map((d,i)=>`<div class="sd-item" onmousedown="selectStopInfuser(${id},${PICKUPS.indexOf(d)})">
+      <span class="sdi-mi" style="color:#ff9800">${d.m} mi</span>
+      <div class="sdi-name">${d.n} <span class="rbadge rb-pickup">&#128230; Pickup</span></div>
+      <div class="sdi-sub">${d.s}, ${d.c}, IL ${d.z}</div>
+    </div>`).join('');
+    dd.style.display='block';return;
+  }
+  const matches=DISP.filter(d=>d.n.toLowerCase().includes(q)||d.c.toLowerCase().includes(q)||d.co.toLowerCase().includes(q)).slice(0,35);
+  if(!matches.length){dd.style.display='none';return}
+  dd.innerHTML=matches.map(d=>{
+    const idx=DISP.indexOf(d);
+    const bt=d.m<=100?'rb-local':d.m<=200?'rb-mid':'rb-down';
+    const bl=d.m<=100?'Local':d.m<=200?'Mid':d.m<=300?'Downstate':'Far Downstate';
+    return `<div class="sd-item" onmousedown="selectStopDisp(${id},${idx})">
+      <span class="sdi-mi">${d.m} mi</span>
+      <div class="sdi-name">${d.n} <span class="rbadge ${bt}">${bl}</span></div>
+      <div class="sdi-sub">${d.s}, ${d.c}, IL ${d.z} — ${d.co} Co.</div>
+    </div>`;
+  }).join('');
+  dd.style.display='block';
+}
+function showStopDD(id){if(document.getElementById('ss_'+id).value)filterStop(id)}
+function hideStopDD(id){setTimeout(()=>{const d=document.getElementById('sd_'+id);if(d)d.style.display='none'},200)}
+function selectStopDisp(stopId, dispIdx){
+  const s=stops.find(x=>x.id===stopId);
+  const d=DISP[dispIdx];
+  if(s&&d){s.disp=d;s.name=d.n;s.lat=null;s.lon=null;renderStops()}
+}
+function selectStopInfuser(stopId,infIdx){
+  const s=stops.find(x=>x.id===stopId);const d=PICKUPS[infIdx];
+  if(s&&d){s.infuser=d;s.name=d.n;s.lat=null;s.lon=null;renderStops()}
+}
+function clearStopSel(id){
+  const s=stops.find(x=>x.id===id);
+  if(s){s.disp=null;s.infuser=null;s.lat=null;s.lon=null;renderStops()}
+}
+function setCustomAddr(id, val){
+  const s=stops.find(x=>x.id===id);
+  if(s){s.addr=val;s.lat=null;s.lon=null;s.name=val}
+}
+
+// ══ Route calculation ══
+async function geocode(address){
+  if(geocacheMap[address])return geocacheMap[address];
+  const url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(address)+'&format=json&limit=1&countrycodes=us';
+  const r=await fetch(url,{headers:{'Accept':'application/json'}});
+  const d=await r.json();
+  if(!d.length)throw new Error('Address not found: '+address);
+  const c={lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)};
+  geocacheMap[address]=c;
+  return c;
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function calcRoute(){
+  const btn=document.getElementById('calcRouteBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> Calculating...';
+  hideRouteResults();
+  showStatus('routeStatus','Looking up addresses...','info');
+
+  try{
+    // Get origin
+    const originName=currentOrigin.name;
+    let originCoords;
+    if(currentOrigin.lat&&currentOrigin.lon){
+      originCoords={lat:currentOrigin.lat,lon:currentOrigin.lon};
+    } else {
+      showStatus('routeStatus','Geocoding starting location...','info');
+      originCoords=await geocode(currentOrigin.address);
+      currentOrigin.lat=originCoords.lat;currentOrigin.lon=originCoords.lon;
+    }
+
+    if(stops.length===0)throw new Error('Please add at least one stop.');
+
+    // Geocode stops
+    const waypoints=[{lat:originCoords.lat,lon:originCoords.lon,name:originName}];
+    for(let i=0;i<stops.length;i++){
+      const s=stops[i];
+      showStatus('routeStatus','Geocoding stop '+(i+1)+' of '+stops.length+'...','info');
+      if(s.type==='disp'&&s.disp){
+        if(s.lat&&s.lon){waypoints.push({lat:s.lat,lon:s.lon,name:'[D] '+s.disp.n});}
+        else{const addr=s.disp.s+', '+s.disp.c+', IL '+s.disp.z;await sleep(1100);const c=await geocode(addr);s.lat=c.lat;s.lon=c.lon;waypoints.push({lat:c.lat,lon:c.lon,name:'[D] '+s.disp.n});}
+      } else if(s.type==='infuser'&&s.infuser){
+        if(s.lat&&s.lon){waypoints.push({lat:s.lat,lon:s.lon,name:'[P] '+s.infuser.n});}
+        else{const addr=s.infuser.s+', '+s.infuser.c+', IL '+s.infuser.z;await sleep(1100);const c=await geocode(addr);s.lat=c.lat;s.lon=c.lon;waypoints.push({lat:c.lat,lon:c.lon,name:'[P] '+s.infuser.n});}
+      } else if(s.type==='custom'&&s.addr){
+        await sleep(1100);const c=await geocode(s.addr);s.lat=c.lat;s.lon=c.lon;waypoints.push({lat:c.lat,lon:c.lon,name:s.addr});
+      } else {throw new Error('Stop '+(i+1)+' has no address selected.');}
+    }
+
+    // Add return to origin
+    const ret=document.getElementById('returnToggle').checked;
+    if(ret)waypoints.push({lat:originCoords.lat,lon:originCoords.lon,name:originName+' (Return)'});
+
+    if(waypoints.length<2)throw new Error('Need at least 2 points to calculate a route.');
+
+    // Call OSRM
+    showStatus('routeStatus','Calculating driving route...','info');
+    const coordStr=waypoints.map(p=>p.lon+','+p.lat).join(';');
+    const osrmUrl='https://router.project-osrm.org/route/v1/driving/'+coordStr+'?overview=false&steps=false';
+    const resp=await fetch(osrmUrl);
+    const data=await resp.json();
+    if(data.code!=='Ok')throw new Error('Route engine error: '+data.code);
+
+    const route=data.routes[0];
+    const totalMiles=(route.distance*0.000621371);
+    const totalHrs=route.duration/3600;
+    const legs=route.legs;
+
+    // Display results
+    document.getElementById('rrMiles').textContent=totalMiles.toFixed(1);
+    document.getElementById('rrMilesNote').textContent='Auto-filled in billing below ↓';
+    const hh=Math.floor(totalHrs);
+    const mm=Math.round((totalHrs-hh)*60);
+    document.getElementById('rrTime').textContent=(hh>0?hh+'h ':'')+mm+'m';
+    document.getElementById('rrStops').textContent=stops.length+(ret?' + return':'');
+
+    // Leg breakdown
+    let legsHtml='';
+    for(let i=0;i<legs.length;i++){
+      const mi=(legs[i].distance*0.000621371).toFixed(1);
+      const fr=waypoints[i].name;
+      const to=waypoints[i+1].name;
+      const isPU=to.startsWith('[P] ');const isDL=to.startsWith('[D] ');
+      const lc=isPU?'#ff9800':isDL?'#6795af':'#959494';
+      const frC=fr.replace(/^\[.\] /,'');const toC=to.replace(/^\[.\] /,'');
+      const tag=isPU?'<span style="font-size:.63rem;color:#ff9800;margin-left:4px">PICKUP</span>':isDL?'<span style="font-size:.63rem;color:#6795af;margin-left:4px">DELIVERY</span>':isGW?'<span style="font-size:.63rem;color:#4caf50;margin-left:4px">CRAFT GROWER</span>':'';
+      legsHtml+=`<div class="leg-item"><span class="leg-arrow" style="color:${lc}">→</span><span class="leg-from">${frC}</span><span class="leg-to">${toC}${tag}</span><span class="leg-mi">${mi} mi</span></div>`;
+    }
+    document.getElementById('rrLegs').innerHTML=legsHtml;
+    document.getElementById('routeResults').classList.add('visible');
+
+    // Auto-fill miles
+    const mf=document.getElementById('miles');
+    mf.value=totalMiles.toFixed(1);
+    mf.classList.add('autofill');
+    document.getElementById('milesNote').style.display='block';
+    autoMiles=true;
+    calculate();
+
+    hideStatus('routeStatus');
+
+  } catch(e){
+    showStatus('routeStatus','&#9888; '+e.message+' — Check internet connection or enter miles manually.','err');
+  }
+
+  btn.disabled=false;
+  btn.innerHTML='&#128207; Calculate Route';
+}
+
+function openMaps(){
+  const originAddr=currentOrigin.address||'17W703 Butterfield Rd, Oakbrook Terrace, IL 60181';
+  const stopAddrs=stops.map(s=>{
+    if(s.type==='disp'&&s.disp)return s.disp.s+', '+s.disp.c+', IL '+s.disp.z;
+    if(s.type==='infuser'&&s.infuser)return s.infuser.s+', '+s.infuser.c+', IL '+s.infuser.z;
+    if(s.type==='custom'&&s.addr)return s.addr;
+    return null;
+  }).filter(Boolean);
+  if(!stopAddrs.length){alert('Please add at least one stop first.');return}
+  const ret=document.getElementById('returnToggle').checked;
+  const all=[originAddr,...stopAddrs,...(ret?[originAddr]:[])];
+  const url='https://www.google.com/maps/dir/'+all.map(a=>encodeURIComponent(a)).join('/');
+  window.open(url,'_blank');
+}
+
+function clearRoute(){
+  stops=[];stopIdCnt=0;
+  hideRouteResults();
+  hideStatus('routeStatus');
+  addStop();
+  document.getElementById('returnToggle').checked=false;
+  const mf=document.getElementById('miles');
+  mf.value='';mf.classList.remove('autofill');
+  document.getElementById('milesNote').style.display='none';
+  autoMiles=false;
+  calculate();
+}
+function hideRouteResults(){
+  document.getElementById('routeResults').classList.remove('visible');
+}
+function showStatus(id,msg,type){
+  const el=document.getElementById(id);
+  el.innerHTML=msg;
+  el.className='status-msg status-'+type;
+  el.style.display='block';
+}
+function hideStatus(id){document.getElementById(id).style.display='none'}
+
+// ══ Billing ══
+function toggleD2(){
+  const on=document.getElementById('toggle2').checked;
+  document.getElementById('d2field').style.display=on?'block':'none';
+  if(!on)document.getElementById('hours2').value='';
+  calculate();
+}
+function toggleOwner(){
+  ownerOn=!ownerOn;
+  document.getElementById('ownerSection').classList.toggle('visible',ownerOn);
+  document.getElementById('lockIcon').textContent=ownerOn?'&#128275;':'&#128274;';
+  document.getElementById('lockLabel').textContent=ownerOn?'Hide Internal Cost Breakdown':'Show Internal Cost Breakdown';
+}
+function onMilesEdit(){
+  autoMiles=false;
+  document.getElementById('miles').classList.remove('autofill');
+  document.getElementById('milesNote').style.display='none';
+  calculate();
+}
+function setClientType(t){
+  clientType=t;
+  const isCur=t==='current';
+  document.getElementById('ctBtnCur').className='ct-btn'+(isCur?' active-cur':'');
+  document.getElementById('ctBtnNew').className='ct-btn'+(isCur?'':' active-new');
+  const badge=document.getElementById('clientBadge');
+  badge.className='client-badge '+(isCur?'cb-cur':'cb-new');
+  badge.textContent=isCur?'CURRENT CLIENT':'NEW CLIENT';
+  document.getElementById('billingCard').style.borderColor=isCur?'#4caf8233':'#6795af33';
+  const sNote=document.getElementById('surchargeNote');
+  sNote.textContent=isCur?'⚡ Long-haul surcharge: $0.35/mi over 200':'⚡ Long-haul surcharge: $0.85/mi over 200';
+  calculate();
+}
+function calculate(){
+  const h1=parseFloat(document.getElementById('hours1').value)||0;
+  const h2=parseFloat(document.getElementById('hours2').value)||0;
+  const rate=parseFloat(document.getElementById('driverRate').value);
+  const miles=parseFloat(document.getElementById('miles').value)||0;
+  const gAct=parseFloat(document.getElementById('gasPrice').value);
+  const hrs=h1+h2;
+  const isDown=miles>SUR_LIMIT;
+  const badge=document.getElementById('runBadge');
+  if(miles>0){
+    const bt=miles<=100?'Local':miles<=200?'Mid-range':'Downstate';
+    const bc=miles<=100?'rb-local':miles<=200?'rb-mid':'rb-down';
+    badge.innerHTML=`<span class="rbadge ${bc}">${bt}</span>`;
+  }else badge.innerHTML='';
+  document.getElementById('surchargeNote').style.display=(isDown&&miles>0)?'block':'none';
+  document.getElementById('surchargeRow').style.display=isDown?'flex':'none';
+  if(!hrs&&!miles){reset();return}
+  const hrsR=Math.ceil(hrs*2)/2;           // round hours UP to nearest 0.5
+  const dPay=hrsR*rate;
+  const tFee=Math.ceil(dPay*MARKUP*10)/10;
+  const gal=Math.ceil(miles/MPG);           // round gallons UP to whole number
+  const fChg=r2(gal*GAS_RATE);
+  const gAc=r2(gal*gAct);
+  const gPro=r2(fChg-gAc);
+  const surRate=clientType==='new'?SUR_MILE_NEW:SUR_MILE_CUR;
+  const sur=isDown?r2((miles-SUR_LIMIT)*surRate):0;
+  const tot=r2(tFee+fChg+INS_CHG+sur);
+  const tCost=r2(dPay+gAc+INS_ACT+OH_RUN);
+  const pro=r2(tot-tCost);
+  const pct=tot>0?(pro/tot*100):0;
+  set('totalOut',fmt(tot));
+  set('transportFee',fmt(tFee));
+  set('fuelCharge',fmt(fChg));
+  set('surchargeAmt',fmt(sur));
+  const rLbl=document.getElementById('surRateLabel');if(rLbl)rLbl.textContent='('+fmt(clientType==='new'?SUR_MILE_NEW:SUR_MILE_CUR)+'/mi over 200)';
+  set('driverPayActual',fmt(dPay)+' ('+hrsR.toFixed(1)+'h billed)');
+  set('gasCostActual',fmt(gAc));
+  set('gasMarkup',fmt(gPro));
+  document.getElementById('runTypeNote').textContent=
+    (isDown?'Downstate':'Local')+' run · '+miles+' mi · '+hrs.toFixed(2)+' hrs (billed '+hrsR.toFixed(1)+')'+(isDown?' · '+fmt(clientType==='new'?SUR_MILE_NEW:SUR_MILE_CUR)+'/mi surcharge':'');
+  const pe=document.getElementById('runProfit');
+  pe.textContent=fmt(pro)+' ('+pct.toFixed(1)+'%)';
+  pe.className='ph-value '+(pro>=0?'green':'red');
+  const bp=Math.max(0,Math.min(100,pct/40*100));
+  const bf=document.getElementById('barFill');
+  bf.style.width=bp+'%';
+  bf.style.background=pct>=20?'#4caf82':pct>=10?'#ffb74d':'#ef5350';
+  set('marginTick',pct.toFixed(1)+'%');
+  const vc=dPay+gAc;
+  [{r:25,ri:'rev25',pi:'profit25',oh:OH},{r:27.5,ri:'rev275',pi:'profit275',oh:OH},{r:30,ri:'rev30',pi:'profit30',oh:OH},
+   {r:25,ri:'arev25',pi:'aprofit25',oh:OH-AUG},{r:27.5,ri:'arev275',pi:'aprofit275',oh:OH-AUG},{r:30,ri:'arev30',pi:'aprofit30',oh:OH-AUG}]
+  .forEach(s=>{
+    const rev=r2(tot*s.r);
+    const p=r2(rev-vc*s.r-s.oh);
+    set(s.ri,'Revenue '+fmtK(rev));
+    const el=document.getElementById(s.pi);
+    el.textContent=(p>=0?'+':'')+fmtK(p)+' profit';
+    el.style.color=p>=0?'#4caf82':'#ef5350';
+  });
+  document.getElementById('monthlyNote').textContent='Overhead: $22,000 now / $19,000 after August. Projections assume uniform run profile.';
+}
+function r2(n){return Math.round(n*100)/100}
+function fmt(n){return'$'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtK(n){const a=Math.abs(n),p=n<0?'-$':'$';return a>=1000?p+(a/1000).toFixed(1)+'k':p+a.toFixed(0)}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+function reset(){
+  ['totalOut','transportFee','fuelCharge','surchargeAmt','driverPayActual','gasCostActual','gasMarkup','runProfit'].forEach(id=>set(id,'—'));
+  set('runTypeNote','Enter run details to calculate');
+  document.getElementById('barFill').style.width='0%';
+  set('marginTick','0%');
+  document.getElementById('runBadge').innerHTML='';
+  ['rev25','rev275','rev30','profit25','profit275','profit30','arev25','arev275','arev30','aprofit25','aprofit275','aprofit30'].forEach(id=>set(id,'—'));
+  set('monthlyNote','');
+}
+function clearBilling(){
+  ['hours1','hours2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('driverRate').value='24';
+  document.getElementById('gasPrice').value='5.50';
+  document.getElementById('toggle2').checked=false;
+  document.getElementById('d2field').style.display='none';
+  if(!autoMiles){document.getElementById('miles').value='';calculate();}
+  else calculate();
+}
+function printQuote(){
+  const was=ownerOn;
+  if(ownerOn)toggleOwner();
+  window.print();
+  if(was)setTimeout(toggleOwner,500);
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
