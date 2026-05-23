@@ -1,2 +1,0 @@
-# gst-calculator
-calculator
